@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+<meta charset='utf-8' />
+<title>Program.Benchmarks-20220425-112307</title>
+
+<style type="text/css">
+	table { border-collapse: collapse; display: block; width: 100%; overflow: auto; }
+	td, th { padding: 6px 13px; border: 1px solid #ddd; text-align: right; }
+	tr { background-color: #fff; border-top: 1px solid #ccc; }
+	tr:nth-child(even) { background: #f8f8f8; }
+</style>
+</head>
+<body>
+<pre><code>
+BenchmarkDotNet=v0.13.1, OS=Windows 10.0.22000
+AMD Ryzen 9 3900X, 1 CPU, 24 logical and 12 physical cores
+.NET SDK=6.0.101
+  [Host]     : .NET 6.0.2 (6.0.222.6406), X64 RyuJIT DEBUG
+  DefaultJob : .NET 6.0.2 (6.0.222.6406), X64 RyuJIT
+</code></pre>
+<pre><code></code></pre>
+
+<table>
+<thead><tr><th>Method</th><th>Mean</th><th>Error</th><th>StdDev</th>
+</tr>
+</thead><tbody><tr><td>Int</td><td>2.457 &mu;s</td><td>0.0437 &mu;s</td><td>0.0408 &mu;s</td>
+</tr><tr><td>UoM</td><td>2.458 &mu;s</td><td>0.0478 &mu;s</td><td>0.0569 &mu;s</td>
+</tr><tr><td>Record</td><td>15.355 &mu;s</td><td>0.1531 &mu;s</td><td>0.1432 &mu;s</td>
+</tr><tr><td>StructRecord</td><td>18.366 &mu;s</td><td>0.3626 &mu;s</td><td>0.5645 &mu;s</td>
+</tr><tr><td>DU</td><td>14.204 &mu;s</td><td>0.0938 &mu;s</td><td>0.0877 &mu;s</td>
+</tr><tr><td>StuctDU</td><td>18.461 &mu;s</td><td>0.3688 &mu;s</td><td>0.2879 &mu;s</td>
+</tr><tr><td>String</td><td>4.659 &mu;s</td><td>0.0533 &mu;s</td><td>0.0499 &mu;s</td>
+</tr></tbody></table>
+</body>
+</html>
