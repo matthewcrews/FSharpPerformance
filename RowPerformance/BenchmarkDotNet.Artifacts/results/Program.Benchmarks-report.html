@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+<meta charset='utf-8' />
+<title>Program.Benchmarks-20220425-183051</title>
+
+<style type="text/css">
+	table { border-collapse: collapse; display: block; width: 100%; overflow: auto; }
+	td, th { padding: 6px 13px; border: 1px solid #ddd; text-align: right; }
+	tr { background-color: #fff; border-top: 1px solid #ccc; }
+	tr:nth-child(even) { background: #f8f8f8; }
+</style>
+</head>
+<body>
+<pre><code>
+BenchmarkDotNet=v0.13.1, OS=Windows 10.0.22000
+AMD Ryzen 9 3900X, 1 CPU, 24 logical and 12 physical cores
+.NET SDK=6.0.101
+  [Host]     : .NET 6.0.2 (6.0.222.6406), X64 RyuJIT DEBUG
+  DefaultJob : .NET 6.0.2 (6.0.222.6406), X64 RyuJIT
+</code></pre>
+<pre><code></code></pre>
+
+<table>
+<thead><tr><th>Method</th><th> Mean</th><th>Error</th><th>StdDev</th><th>Ratio</th><th>RatioSD</th>
+</tr>
+</thead><tbody><tr><td>Array</td><td>704.5 &mu;s</td><td>8.51 &mu;s</td><td>7.96 &mu;s</td><td>1.00</td><td>0.00</td>
+</tr><tr><td>Row</td><td>700.4 &mu;s</td><td>2.58 &mu;s</td><td>2.28 &mu;s</td><td>1.00</td><td>0.01</td>
+</tr><tr><td>Map</td><td>38,153.8 &mu;s</td><td>753.62 &mu;s</td><td>1,006.06 &mu;s</td><td>54.41</td><td>1.53</td>
+</tr><tr><td>Dictionary</td><td>4,539.6 &mu;s</td><td>34.77 &mu;s</td><td>30.82 &mu;s</td><td>6.45</td><td>0.08</td>
+</tr></tbody></table>
+</body>
+</html>

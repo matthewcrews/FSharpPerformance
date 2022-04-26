@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+<meta charset='utf-8' />
+<title>Program.Benchmarks-20220426-101543</title>
+
+<style type="text/css">
+	table { border-collapse: collapse; display: block; width: 100%; overflow: auto; }
+	td, th { padding: 6px 13px; border: 1px solid #ddd; text-align: right; }
+	tr { background-color: #fff; border-top: 1px solid #ccc; }
+	tr:nth-child(even) { background: #f8f8f8; }
+</style>
+</head>
+<body>
+<pre><code>
+BenchmarkDotNet=v0.13.1, OS=Windows 10.0.22000
+AMD Ryzen 9 3900X, 1 CPU, 24 logical and 12 physical cores
+.NET SDK=6.0.101
+  [Host]     : .NET 6.0.2 (6.0.222.6406), X64 RyuJIT DEBUG
+  DefaultJob : .NET 6.0.2 (6.0.222.6406), X64 RyuJIT
+</code></pre>
+<pre><code></code></pre>
+
+<table>
+<thead><tr><th>Method</th><th>Size</th><th>    Mean</th><th>  Error</th><th>  StdDev</th>
+</tr>
+</thead><tbody><tr><td>Map</td><td>10</td><td>5.771 &mu;s</td><td>0.0969 &mu;s</td><td>0.0859 &mu;s</td>
+</tr><tr><td>Bar</td><td>10</td><td>5.283 &mu;s</td><td>0.0726 &mu;s</td><td>0.0679 &mu;s</td>
+</tr><tr><td>Map</td><td>100</td><td>11.134 &mu;s</td><td>0.1825 &mu;s</td><td>0.1618 &mu;s</td>
+</tr><tr><td>Bar</td><td>100</td><td>7.071 &mu;s</td><td>0.1400 &mu;s</td><td>0.2595 &mu;s</td>
+</tr><tr><td>Map</td><td>1_000</td><td>15.596 &mu;s</td><td>0.3060 &mu;s</td><td>0.5822 &mu;s</td>
+</tr><tr><td>Bar</td><td>1_000</td><td>19.487 &mu;s</td><td>0.2649 &mu;s</td><td>0.2212 &mu;s</td>
+</tr><tr><td>Map</td><td>10_000</td><td>20.596 &mu;s</td><td>0.1660 &mu;s</td><td>0.1472 &mu;s</td>
+</tr><tr><td>Bar</td><td>10_000</td><td>113.660 &mu;s</td><td>1.8324 &mu;s</td><td>1.6244 &mu;s</td>
+</tr><tr><td>Map</td><td>100_000</td><td>29.942 &mu;s</td><td>0.5910 &mu;s</td><td>0.8476 &mu;s</td>
+</tr><tr><td>Bar</td><td>100_000</td><td>13,134.358 &mu;s</td><td>754.6337 &mu;s</td><td>2,213.2099 &mu;s</td>
+</tr><tr><td>Map</td><td>1_000_000</td><td>39.462 &mu;s</td><td>0.7448 &mu;s</td><td>0.6967 &mu;s</td>
+</tr><tr><td>Bar</td><td>1_000_000</td><td>422,973.400 &mu;s</td><td>8,287.7654 &mu;s</td><td>12,656.2931 &mu;s</td>
+</tr></tbody></table>
+</body>
+</html>
