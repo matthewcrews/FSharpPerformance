@@ -141,10 +141,4 @@ type Benchmarks () =
         result
 
 
-
-[<EntryPoint>]
-let main args =
-
-    let _ = BenchmarkRunner.Run<Benchmarks>()
-
-    0
+let _ = BenchmarkRunner.Run<Benchmarks>()
