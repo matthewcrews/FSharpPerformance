@@ -10,7 +10,7 @@ This tracking of Assignments is in the hot path and currently the slowest part o
 
 ## The Approaches
 
-I investigate 6 different approaches
+I investigate 7 different approaches
 
 1. Default Tuple
 2. Struct Tuple
