@@ -4,11 +4,13 @@ I test various ways to represent the same information and the performance impact
 
 ## Results
 
-|       Method |     Mean |     Error |    StdDev |   Median |
-|------------- |---------:|----------:|----------:|---------:|
-|          Int | 1.468 us | 0.0998 us | 0.2943 us | 1.319 us |
-|          UoM | 1.413 us | 0.0909 us | 0.2680 us | 1.308 us |
-|       Record | 3.003 us | 0.1476 us | 0.4211 us | 2.854 us |
-| StructRecord | 3.586 us | 0.2262 us | 0.6669 us | 3.189 us |
-|           DU | 3.246 us | 0.2006 us | 0.5916 us | 2.932 us |
-|     StructDU | 3.574 us | 0.2046 us | 0.6031 us | 3.297 us |
+|             Method |     Mean |     Error |    StdDev |  Gen 0 | Allocated |
+|------------------- |---------:|----------:|----------:|-------:|----------:|
+|                Int | 1.119 us | 0.0223 us | 0.0548 us | 0.3510 |      3 KB |
+|                UoM | 1.103 us | 0.0218 us | 0.0260 us | 0.3510 |      3 KB |
+|             Record | 2.562 us | 0.0512 us | 0.0949 us | 0.4044 |      3 KB |
+|       StructRecord | 2.560 us | 0.0470 us | 0.0811 us | 0.7248 |      6 KB |
+| CustomStructRecord | 3.524 us | 0.0667 us | 0.0844 us | 0.8965 |      7 KB |
+|                 DU | 2.480 us | 0.0412 us | 0.0366 us | 0.4044 |      3 KB |
+|           StructDU | 2.603 us | 0.0517 us | 0.0432 us | 0.7248 |      6 KB |
+|   ImmutableHashSet | 1.991 us | 0.0356 us | 0.0487 us | 0.3624 |      3 KB |
