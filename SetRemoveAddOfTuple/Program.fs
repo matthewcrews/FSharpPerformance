@@ -61,7 +61,8 @@ type BitArrayTracker private (jobCount: int, machineCount: int, values: BitArray
         
     member _.Item
         with get (jobId: int<JobId>, machineId: int<MachineId>) =
-            (int jobId) * machineCount + (int machineId)
+            let index = (int jobId) * machineCount + (int machineId)
+            values[index]
         
             
     member _.Set (jobId: int<JobId>, machineId: int<MachineId>, value) =
