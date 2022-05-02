@@ -28,6 +28,22 @@ Machine Count: 10
 Job Count : 100
 Remove/Add Count: 10
 
+|                  Method |        Mean |      Error |     StdDev |  Gen 0 |  Gen 1 | Allocated |
+|------------------------ |------------:|-----------:|-----------:|-------:|-------:|----------:|
+|                TupleAdd | 5,935.01 ns |  95.520 ns |  84.676 ns | 0.8850 | 0.0076 |   7,416 B |
+|          StructTupleAdd | 5,930.47 ns | 114.158 ns | 156.260 ns | 1.2436 | 0.0076 |  10,424 B |
+|                Int64Add | 1,253.93 ns |  24.810 ns |  48.389 ns | 0.4368 | 0.0038 |   3,656 B |
+|        RefAssignmentAdd | 3,317.01 ns |  57.650 ns |  51.105 ns | 0.4349 | 0.0038 |   3,656 B |
+|     StructAssignmentAdd | 3,245.86 ns |  63.452 ns | 107.746 ns | 0.8202 | 0.0076 |   6,872 B |
+|    CompactAssignmentAdd | 3,314.19 ns |  65.317 ns | 122.681 ns | 0.8202 | 0.0076 |   6,872 B |
+|      BitArrayTrackerAdd |    49.93 ns |   1.055 ns |   2.108 ns | 0.0258 |      - |     216 B |
+|             TupleRemove | 6,033.93 ns | 119.277 ns | 146.483 ns | 0.8240 |      - |   6,904 B |
+|       StructTupleRemove | 5,765.80 ns | 112.020 ns | 174.402 ns | 1.1215 | 0.0076 |   9,400 B |
+|             Int64Remove | 1,100.27 ns |  21.690 ns |  28.203 ns | 0.3891 | 0.0019 |   3,256 B |
+|     RefAssignmentRemove | 3,054.12 ns |  51.059 ns |  47.761 ns | 0.3891 |      - |   3,256 B |
+|  StructAssignmentRemove | 2,920.25 ns |  56.931 ns |  77.928 ns | 0.7133 | 0.0038 |   5,992 B |
+| CompactAssignmentRemove | 2,814.26 ns |  53.150 ns |  59.076 ns | 0.7133 | 0.0038 |   5,992 B |
+|   BitArrayTrackerRemove |    48.01 ns |   1.019 ns |   2.789 ns | 0.0258 |      - |     216 B |
 
 ### Scenario 2
 
@@ -57,3 +73,20 @@ Remove/Add Count: 10
 Machine Count: 100
 Job Count : 1,000
 Remove/Add Count: 10
+
+|                  Method |       Mean |     Error |    StdDev |  Gen 0 |  Gen 1 | Allocated |
+|------------------------ |-----------:|----------:|----------:|-------:|-------:|----------:|
+|                TupleAdd | 6,376.8 ns | 125.31 ns | 144.31 ns | 0.9003 | 0.0076 |      7 KB |
+|          StructTupleAdd | 5,614.0 ns | 111.11 ns | 148.33 ns | 1.2436 | 0.0076 |     10 KB |
+|                Int64Add | 1,249.5 ns |  24.99 ns |  35.03 ns | 0.4539 | 0.0038 |      4 KB |
+|        RefAssignmentAdd | 3,337.0 ns |  61.77 ns |  57.78 ns | 0.4539 | 0.0038 |      4 KB |
+|     StructAssignmentAdd | 3,166.1 ns |  60.16 ns | 100.52 ns | 0.8469 | 0.0076 |      7 KB |
+|    CompactAssignmentAdd | 3,200.6 ns |  62.34 ns |  69.30 ns | 0.8469 | 0.0076 |      7 KB |
+|      BitArrayTrackerAdd |   556.1 ns |  10.87 ns |  15.93 ns | 1.5030 | 0.1249 |     12 KB |
+|             TupleRemove | 5,878.3 ns | 114.31 ns | 112.26 ns | 0.8469 |      - |      7 KB |
+|       StructTupleRemove | 5,398.2 ns | 103.93 ns | 119.68 ns | 1.1063 | 0.0076 |      9 KB |
+|             Int64Remove | 1,120.5 ns |  22.47 ns |  30.76 ns | 0.4101 | 0.0019 |      3 KB |
+|     RefAssignmentRemove | 2,836.0 ns |  50.76 ns |  45.00 ns | 0.4082 |      - |      3 KB |
+|  StructAssignmentRemove | 2,815.4 ns |  55.42 ns |  61.60 ns | 0.7286 | 0.0038 |      6 KB |
+| CompactAssignmentRemove | 2,824.4 ns |  56.23 ns |  93.95 ns | 0.7286 | 0.0038 |      6 KB |
+|   BitArrayTrackerRemove |   566.3 ns |  11.32 ns |  18.29 ns | 1.5030 | 0.1249 |     12 KB |

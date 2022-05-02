@@ -85,8 +85,8 @@ type BitArrayTracker private (jobCount: int, machineCount: int, values: BitArray
 type Benchmarks () =
     
     let rng = Random 123
-    let jobCount = 100
-    let machineCount = 10
+    let jobCount = 1_000
+    let machineCount = 100
     let valueCount = 100
     let addValueCount = 10
     let removeValueCount = 10
