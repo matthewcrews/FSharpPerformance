@@ -17,4 +17,4 @@ release.cmd
 release.sh
 *.orig
 *.DotSettings.user
-src/ModelProfiling/BenchmarkDotNet.Artifacts/
+**/BenchmarkDotNet.Artifacts/

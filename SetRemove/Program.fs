@@ -1,6 +1,8 @@
 ﻿open System
+open System.Collections.Immutable
 open BenchmarkDotNet.Attributes
 open BenchmarkDotNet.Running
+
 
 [<Measure>] type JobId
 
@@ -16,12 +18,39 @@ type StructRecordJobId =
         Value : int
     }
 
+[<Struct>]
+[<CustomEquality; CustomComparison>]
+type CustomStructRecordJobId =
+    {
+        Value : int
+    }
+    override this.Equals other =
+        match other with
+        | :? CustomStructRecordJobId as that -> this.Value = that.Value
+        | _ -> false
+        
+    override this.GetHashCode () = this.Value.GetHashCode()
+
+    interface IEquatable<CustomStructRecordJobId> with
+        member this.Equals other = other.Value = this.Value
+        
+    interface IComparable<CustomStructRecordJobId> with
+        member this.CompareTo other = other.Value.CompareTo this.Value
+    
+    interface IComparable with
+        member this.CompareTo other =
+            match other with
+            | :? CustomStructRecordJobId as that -> (this :> IComparable<_>).CompareTo that
+            | _ -> -1
+
+
 type DuJobId = JobId of int
 
 [<Struct>]
 type StructDuJobId = JobId of int
 
 
+[<MemoryDiagnoser>]
 type Benchmarks () =
 
     let rng = Random 123
@@ -47,6 +76,11 @@ type Benchmarks () =
         |> List.map (fun x -> { StructRecordJobId.Value = x })
         |> Set
 
+    let customStructRecordSet =
+        values
+        |> List.map (fun x -> { CustomStructRecordJobId.Value = x })
+        |> Set
+    
     let duSet =
         values
         |> List.map (fun x -> DuJobId.JobId x)
@@ -56,6 +90,10 @@ type Benchmarks () =
         values
         |> List.map (fun x -> StructDuJobId.JobId x)
         |> Set
+
+
+    let immutableHashSet =
+        values.ToImmutableSortedSet()
 
     // Test Values to remove
     let removeCount = 10
@@ -75,6 +113,10 @@ type Benchmarks () =
         intValues
         |> Array.map (fun x -> { StructRecordJobId.Value = x })
 
+    let customStructRecordValues =
+        intValues
+        |> Array.map (fun x -> { CustomStructRecordJobId.Value = x })
+    
     let duValues =
         intValues
         |> Array.map (fun x -> DuJobId.JobId x)
@@ -83,6 +125,8 @@ type Benchmarks () =
         intValues
         |> Array.map (fun x -> StructDuJobId.JobId x)
 
+    let immutableHashSetValues =
+        intValues
 
     [<Benchmark>]
     member _.Int () =
@@ -122,6 +166,16 @@ type Benchmarks () =
         result
 
     [<Benchmark>]
+    member _.CustomStructRecord () =
+        let mutable result = Set.empty
+        
+        for v in customStructRecordValues do
+            result <- customStructRecordSet.Remove v
+
+        result
+    
+    
+    [<Benchmark>]
     member _.DU () =
         let mutable result = Set.empty
         
@@ -140,5 +194,34 @@ type Benchmarks () =
 
         result
 
+    [<Benchmark>]
+    member _.ImmutableHashSet () =
+        let mutable result = ImmutableSortedSet.Create()
+        
+        for v in intValues do
+            result <- immutableHashSet.Remove v
 
-let _ = BenchmarkRunner.Run<Benchmarks>()
+        result
+
+let profile iterations =
+    let mutable result = Set.empty
+    let b = Benchmarks ()
+    
+    for _ in 1 .. iterations do
+        result <- b.CustomStructRecord()
+        
+    result
+
+
+let args = Environment.GetCommandLineArgs()
+
+match args[1].ToLower() with
+| "benchmark" ->
+    let _ = BenchmarkRunner.Run<Benchmarks>()
+    ()
+| "profile" ->
+    let iterations = int args[2]
+    let _ = profile iterations
+    ()
+| _ ->
+    invalidArg (nameof args) $"Unknown command: {args[1]}"
