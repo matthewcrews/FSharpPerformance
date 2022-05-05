@@ -7,7 +7,19 @@ open BenchmarkDotNet.Running
 [<Measure>] type JobId
 [<Measure>] type MachineId
 [<Measure>] type OperationId
+[<Measure>] type Assignment = JobId * MachineId * OperationId
 
+module Assignment =
+    
+    let create (jobId: int<JobId>) (machineId: int<MachineId>) (operationId: int<OperationId>) =
+        ((int64 jobId) <<< 32) ||| ((int64 machineId) <<< 16) ||| (int64 operationId)
+        |> LanguagePrimitives.Int64WithMeasure<Assignment>
+        
+    let decompose (assignment: int64<Assignment>) =
+        let jobId = int (int64 assignment >>> 32) |> LanguagePrimitives.Int32WithMeasure<JobId>
+        let machineId = (int assignment) >>> 16 |> LanguagePrimitives.Int32WithMeasure<MachineId>
+        let operationId = (int assignment) &&& 0x0000FFFF |> LanguagePrimitives.Int32WithMeasure<OperationId>
+        jobId, machineId, operationId
 
 
 type BitSetTracker (jobCount, machineCount, operationCount: int) =
@@ -27,7 +39,6 @@ type BitSetTracker (jobCount, machineCount, operationCount: int) =
                 raise (IndexOutOfRangeException (nameof machineId))
             if (int operationId) >= operationCount then
                 raise (IndexOutOfRangeException (nameof operationId))
-                
             
             let location = (int jobId) * (machineCount * operationCount) + (int machineId) * operationCount + (int operationId)
             // The int64 we will need to lookup
@@ -89,18 +100,95 @@ module BitSetTracker =
                 
         acc.ToArray()
         
+  
+[<MemoryDiagnoser>]
+type Benchmarks () =
+    
+    let rng = Random 123
+    let jobIdBound = 100
+    let machineIdBound = 10
+    let operationIdBound = 10
+    let valueCount = 200
+    
+    let values =
+        [|for _ in 1..valueCount ->
+            let jobId = rng.Next jobIdBound |> LanguagePrimitives.Int32WithMeasure<JobId>
+            let machineId = rng.Next machineIdBound |> LanguagePrimitives.Int32WithMeasure<MachineId>
+            let operationId = rng.Next operationIdBound |> LanguagePrimitives.Int32WithMeasure<OperationId>
+            struct (jobId, machineId, operationId)
+        |]
+        
+    let removeCount = 10
+    let removeValues =
+        [|for _ in 1..removeCount ->
+            values[rng.Next values.Length]  
+        |]
+        
+    let addCount = 10
+    let addValues =
+        [|for _ in 1..addCount ->
+            let jobId = rng.Next jobIdBound |> LanguagePrimitives.Int32WithMeasure<JobId>
+            let machineId = rng.Next machineIdBound |> LanguagePrimitives.Int32WithMeasure<MachineId>
+            let operationId = rng.Next operationIdBound |> LanguagePrimitives.Int32WithMeasure<OperationId>
+            struct (jobId, machineId, operationId)
+        |]
+        
+    let hashSet =
+        values
+        |> Array.map (fun struct (jobId, machineId, operationId) -> Assignment.create jobId machineId operationId)
+        |> HashSet
+        
+    let bitSet =
+        let b = BitSetTracker (jobIdBound, machineIdBound, operationIdBound)
+        for jobId, machineId, operationId in values do
+            b.[jobId, machineId, operationId] <- true   
+        b
+            
+            
+    [<Benchmark>]
+    member _.HashSetAdd () =
+        
+        for jobId, machineId, operationId in addValues do
+            let assignment = Assignment.create jobId machineId operationId
+            hashSet.Add assignment |> ignore
+        
+        
+    [<Benchmark>]
+    member _.BitSetAdd () =
+        
+        for jobId, machineId, operationId in addValues do
+            bitSet[jobId, machineId, operationId] <- true
+            
+            
+    [<Benchmark>]
+    member _.HashSetRemove () =
+        
+        for jobId, machineId, operationId in addValues do
+            let assignment = Assignment.create jobId machineId operationId
+            hashSet.Remove assignment |> ignore
+            
+            
+    [<Benchmark>]
+    member _.BitSetRemove () =
+        
+        for jobId, machineId, operationId in addValues do
+            bitSet[jobId, machineId, operationId] <- false
+            
+            
+    [<Benchmark>]
+    member _.HashSetMap () =
+        
+        hashSet
+        |> Seq.map Assignment.decompose
+        |> Seq.toArray
+        
+        
+    [<Benchmark>]
+    member _.BitSetMap () =
+        
+        bitSet
+        |> BitSetTracker.map (fun a b c -> a, b, c)
+        
             
         
-let t = BitSetTracker (100, 4, 4)
-let jobId = 30<JobId>
-let machineId = 3<MachineId>
-let operationId = 2<OperationId>
-t[jobId, machineId, operationId] <- true
-t[jobId, machineId, operationId + 1<OperationId>] <- true
-t[jobId, machineId, operationId] <- false
-let r = BitSetTracker.map (fun a b c -> $"Job{a}, Machine{b}, Operation{c}") t
-            
-printfn $"{r}"
-            
-// For more information see https://aka.ms/fsharp-console-apps
-printfn "Hello from F#"
+let _ = BenchmarkRunner.Run<Benchmarks>()
