@@ -16,4 +16,3 @@ These are the results of my benchmarking. `SmallSet<'T>` uses the default behavi
 |     SmallSetFastComparerRemove |  2,729.23 ns |    96.869 ns |   285.621 ns |  2,662.08 ns |      - |         - |
 | SmallSetEqualityComparerRemove |  1,146.31 ns |    36.934 ns |   108.900 ns |  1,101.90 ns |      - |         - |
 |            SmallSetInt64Remove |    904.72 ns |    32.147 ns |    94.282 ns |    883.13 ns |      - |         - |
-
