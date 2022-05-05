@@ -105,10 +105,10 @@ module BitSetTracker =
 type Benchmarks () =
     
     let rng = Random 123
-    let jobIdBound = 100
+    let jobIdBound = 1_000
     let machineIdBound = 10
-    let operationIdBound = 10
-    let valueCount = 200
+    let operationIdBound = 100
+    let valueCount = 2_000
     
     let values =
         [|for _ in 1..valueCount ->
@@ -118,13 +118,13 @@ type Benchmarks () =
             struct (jobId, machineId, operationId)
         |]
         
-    let removeCount = 10
+    let removeCount = 2
     let removeValues =
         [|for _ in 1..removeCount ->
             values[rng.Next values.Length]  
         |]
         
-    let addCount = 10
+    let addCount = 2
     let addValues =
         [|for _ in 1..addCount ->
             let jobId = rng.Next jobIdBound |> LanguagePrimitives.Int32WithMeasure<JobId>
@@ -163,7 +163,7 @@ type Benchmarks () =
     [<Benchmark>]
     member _.HashSetRemove () =
         
-        for jobId, machineId, operationId in addValues do
+        for jobId, machineId, operationId in removeValues do
             let assignment = Assignment.create jobId machineId operationId
             hashSet.Remove assignment |> ignore
             
@@ -171,7 +171,7 @@ type Benchmarks () =
     [<Benchmark>]
     member _.BitSetRemove () =
         
-        for jobId, machineId, operationId in addValues do
+        for jobId, machineId, operationId in removeValues do
             bitSet[jobId, machineId, operationId] <- false
             
             
