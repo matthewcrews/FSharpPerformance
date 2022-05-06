@@ -1,4 +1,4 @@
-# Fast Than HashSet
+# Faster than HashSet
 
 I have an interesting challenge where HashSet operations are the bottleneck for my simulation. I decided to see if I could go faster using an `int64 array` as the backing store and bit operations for updated. It appears that you can if you can make assumptions about your domain.
 
