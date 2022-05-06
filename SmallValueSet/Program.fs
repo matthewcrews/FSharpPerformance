@@ -484,7 +484,7 @@ type Benchmarks () =
         let mutable result = false
 
         for elem in addValues do
-            result <- smallSetInt64.Add elem
+            result <- smallSetGenericIEquatable.Add elem
 
         result
 
@@ -530,6 +530,15 @@ type Benchmarks () =
 
         for elem in removeValues do
             result <- smallSetInt64.Remove elem
+
+        result
+
+    [<Benchmark>]
+    member _.SmallSetGenericIEquatableRemove () =
+        let mutable result = false
+
+        for elem in removeValues do
+            result <- smallSetGenericIEquatable.Remove elem
 
         result
 
