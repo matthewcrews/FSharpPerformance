@@ -24,12 +24,12 @@ module Assignment =
 
 type BitSetTracker (jobCount, machineCount, operationCount: int) =
     let uint64sRequired = ((jobCount * machineCount * operationCount) + 63) / 64
-    let values : uint64 array = Array.zeroCreate uint64sRequired
+    let buckets : uint64 array = Array.zeroCreate uint64sRequired
     
     member internal _.JobCount = jobCount
     member internal _.MachineCount = machineCount
     member internal _.OperationCount = operationCount
-    member internal _.Values = values
+    member internal _.Values = buckets
     
     member _.Item
         with get (jobId: int<JobId>, machineId: int<MachineId>, operationId: int<OperationId>) =
@@ -40,6 +40,7 @@ type BitSetTracker (jobCount, machineCount, operationCount: int) =
             if (int operationId) >= operationCount then
                 raise (IndexOutOfRangeException (nameof operationId))
             
+            // The location of the bit we are interested in
             let location = (int jobId) * (machineCount * operationCount) + (int machineId) * operationCount + (int operationId)
             // The int64 we will need to lookup
             let bucket = location / 64
@@ -48,7 +49,7 @@ type BitSetTracker (jobCount, machineCount, operationCount: int) =
             // Mask to check with
             let mask = 1UL <<< offset
             // Return whether the bit at the offset is set to 1 or not
-            values[bucket] &&& mask <> 0UL
+            buckets[bucket] &&& mask <> 0UL
             
         and set (jobId: int<JobId>, machineId: int<MachineId>, operationId: int<OperationId>) value =
             if (int jobId) >= jobCount then
@@ -58,6 +59,7 @@ type BitSetTracker (jobCount, machineCount, operationCount: int) =
             if (int operationId) >= operationCount then
                 raise (IndexOutOfRangeException (nameof operationId))
             
+            // The location of the bit we want to update
             let location = (int jobId) * (machineCount * operationCount) + (int machineId) * operationCount + (int operationId)
             // The int64 we will need to lookup
             let bucket = location / 64
@@ -66,8 +68,30 @@ type BitSetTracker (jobCount, machineCount, operationCount: int) =
             // Get the int representation of the value
             let value = if value then 1UL else 0UL
             // Set the bit in the bucket to the desired value
-            values[bucket] <- (values[bucket] &&& ~~~(1UL <<< offset)) ||| (value <<< offset)
+            buckets[bucket] <- (buckets[bucket] &&& ~~~(1UL <<< offset)) ||| (value <<< offset)
     
+
+    member _.SetMany (indices: struct (int<JobId> * int<MachineId> * int<OperationId>) array) value =
+
+        for jobId, machineId, operationId in indices do
+            if (int jobId) >= jobCount then
+                raise (IndexOutOfRangeException (nameof jobId))
+            if (int machineId) >= machineCount then
+                raise (IndexOutOfRangeException (nameof machineId))
+            if (int operationId) >= operationCount then
+                raise (IndexOutOfRangeException (nameof operationId))
+            
+            // The location of the bit we want to update
+            let location = (int jobId) * (machineCount * operationCount) + (int machineId) * operationCount + (int operationId)
+            // The int64 we will need to lookup
+            let bucket = location / 64
+            // The bit in the int64 we want to update
+            let offset = location - (bucket * 64)
+            // Get the int representation of the value
+            let value = if value then 1UL else 0UL
+            // Set the bit in the bucket to the desired value
+            buckets[bucket] <- (buckets[bucket] &&& ~~~(1UL <<< offset)) ||| (value <<< offset)
+
             
 module BitSetTracker =
     
@@ -76,6 +100,7 @@ module BitSetTracker =
         let mutable i = 0
         let length = b.Values.Length
 
+        // Source of algorithm: https://lemire.me/blog/2018/02/21/iterating-over-set-bits-quickly/
         while i < length do
             let mutable bitSet = b.Values[i]
             while bitSet <> 0UL do
@@ -158,6 +183,11 @@ type Benchmarks () =
         
         for jobId, machineId, operationId in addValues do
             bitSet[jobId, machineId, operationId] <- true
+
+    [<Benchmark>]
+    member _.BitSetAddMany () =
+        
+        bitSet.SetMany addValues true
             
             
     [<Benchmark>]
@@ -175,6 +205,11 @@ type Benchmarks () =
             bitSet[jobId, machineId, operationId] <- false
             
             
+    [<Benchmark>]
+    member _.BitSetRemoveMany () =
+        bitSet.SetMany removeValues false
+
+        
     [<Benchmark>]
     member _.HashSetMap () =
         
