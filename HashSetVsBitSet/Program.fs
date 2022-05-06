@@ -4,6 +4,10 @@ open System.Collections.Generic
 open BenchmarkDotNet.Attributes
 open BenchmarkDotNet.Running
 
+open Benchmark
+
+open System.Runtime.CompilerServices
+
 [<Measure>] type JobId
 [<Measure>] type MachineId
 [<Measure>] type OperationId
@@ -23,7 +27,7 @@ module Assignment =
 
 
 type BitSetTracker (jobCount, machineCount, operationCount: int) =
-    let uint64sRequired = ((jobCount * machineCount * operationCount) + 63) / 64
+    let uint64sRequired = ((jobCount * machineCount * operationCount) + 63) >>> 6
     let buckets : uint64 array = Array.zeroCreate uint64sRequired
     
     member internal _.JobCount = jobCount
@@ -32,7 +36,8 @@ type BitSetTracker (jobCount, machineCount, operationCount: int) =
     member internal _.Values = buckets
     
     member _.Item
-        with get (jobId: int<JobId>, machineId: int<MachineId>, operationId: int<OperationId>) =
+    
+        with [<MethodImpl(MethodImplOptions.AggressiveInlining)>] get (jobId: int<JobId>, machineId: int<MachineId>, operationId: int<OperationId>) =
             if (int jobId) >= jobCount then
                 raise (IndexOutOfRangeException (nameof jobId))
             if (int machineId) >= machineCount then
@@ -41,17 +46,19 @@ type BitSetTracker (jobCount, machineCount, operationCount: int) =
                 raise (IndexOutOfRangeException (nameof operationId))
             
             // The location of the bit we are interested in
-            let location = (int jobId) * (machineCount * operationCount) + (int machineId) * operationCount + (int operationId)
+            let location = int jobId
+            let location = location*machineCount    + int machineId
+            let location = location*operationCount  + int operationId
             // The int64 we will need to lookup
-            let bucket = location / 64
+            let bucket = location >>> 6
             // The bit in the int64 we want to return
-            let offset = location - (bucket * 64)
+            let offset = location &&& 0x3F
             // Mask to check with
             let mask = 1UL <<< offset
             // Return whether the bit at the offset is set to 1 or not
             buckets[bucket] &&& mask <> 0UL
             
-        and set (jobId: int<JobId>, machineId: int<MachineId>, operationId: int<OperationId>) value =
+        and [<MethodImpl(MethodImplOptions.AggressiveInlining)>] set (jobId: int<JobId>, machineId: int<MachineId>, operationId: int<OperationId>) value =
             if (int jobId) >= jobCount then
                 raise (IndexOutOfRangeException (nameof jobId))
             if (int machineId) >= machineCount then
@@ -59,12 +66,13 @@ type BitSetTracker (jobCount, machineCount, operationCount: int) =
             if (int operationId) >= operationCount then
                 raise (IndexOutOfRangeException (nameof operationId))
             
-            // The location of the bit we want to update
-            let location = (int jobId) * (machineCount * operationCount) + (int machineId) * operationCount + (int operationId)
+            let location = int jobId
+            let location = location*machineCount    + int machineId
+            let location = location*operationCount  + int operationId
             // The int64 we will need to lookup
-            let bucket = location / 64
-            // The bit in the int64 we want to update
-            let offset = location - (bucket * 64)
+            let bucket = location >>> 6
+            // The bit in the int64 we want to return
+            let offset = location &&& 0x3F
             // Get the int representation of the value
             let value = if value then 1UL else 0UL
             // Set the bit in the bucket to the desired value
@@ -81,12 +89,14 @@ type BitSetTracker (jobCount, machineCount, operationCount: int) =
             if (int operationId) >= operationCount then
                 raise (IndexOutOfRangeException (nameof operationId))
             
-            // The location of the bit we want to update
-            let location = (int jobId) * (machineCount * operationCount) + (int machineId) * operationCount + (int operationId)
+            // The location of the bit we are interested in
+            let location = int jobId
+            let location = location*machineCount    + int machineId
+            let location = location*operationCount  + int operationId
             // The int64 we will need to lookup
-            let bucket = location / 64
-            // The bit in the int64 we want to update
-            let offset = location - (bucket * 64)
+            let bucket = location >>> 6
+            // The bit in the int64 we want to return
+            let offset = location &&& 0x3F
             // Get the int representation of the value
             let value = if value then 1UL else 0UL
             // Set the bit in the bucket to the desired value
@@ -127,13 +137,15 @@ module BitSetTracker =
         
   
 [<MemoryDiagnoser>]
+[<Config(typeof<BenchmarkConfig>)>]
 type Benchmarks () =
     
-    let rng = Random 123
-    let jobIdBound = 1_000
-    let machineIdBound = 10
-    let operationIdBound = 100
-    let valueCount = 1_000
+    let rng               = Random 123
+
+    let jobIdBound        = 1_000
+    let machineIdBound    = 10
+    let operationIdBound  = 100
+    let valueCount        = 1_000
     
     let values =
         [|for _ in 1..valueCount ->
@@ -223,7 +235,5 @@ type Benchmarks () =
         
         bitSet
         |> BitSetTracker.map (fun a b c -> struct (a, b, c))
-        
-            
         
 let _ = BenchmarkRunner.Run<Benchmarks>()
