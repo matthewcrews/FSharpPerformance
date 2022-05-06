@@ -19,7 +19,7 @@ module Assignment =
         let jobId = int (int64 assignment >>> 32) |> LanguagePrimitives.Int32WithMeasure<JobId>
         let machineId = (int assignment) >>> 16 |> LanguagePrimitives.Int32WithMeasure<MachineId>
         let operationId = (int assignment) &&& 0x0000FFFF |> LanguagePrimitives.Int32WithMeasure<OperationId>
-        jobId, machineId, operationId
+        struct (jobId, machineId, operationId)
 
 
 type BitSetTracker (jobCount, machineCount, operationCount: int) =
@@ -108,7 +108,7 @@ type Benchmarks () =
     let jobIdBound = 1_000
     let machineIdBound = 10
     let operationIdBound = 100
-    let valueCount = 2_000
+    let valueCount = 1_000
     
     let values =
         [|for _ in 1..valueCount ->
@@ -118,13 +118,13 @@ type Benchmarks () =
             struct (jobId, machineId, operationId)
         |]
         
-    let removeCount = 2
+    let removeCount = 20
     let removeValues =
         [|for _ in 1..removeCount ->
             values[rng.Next values.Length]  
         |]
         
-    let addCount = 2
+    let addCount = 20
     let addValues =
         [|for _ in 1..addCount ->
             let jobId = rng.Next jobIdBound |> LanguagePrimitives.Int32WithMeasure<JobId>
@@ -187,7 +187,7 @@ type Benchmarks () =
     member _.BitSetMap () =
         
         bitSet
-        |> BitSetTracker.map (fun a b c -> a, b, c)
+        |> BitSetTracker.map (fun a b c -> struct (a, b, c))
         
             
         
