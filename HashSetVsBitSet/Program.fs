@@ -1,10 +1,8 @@
 ﻿open System
-open System.Collections
 open System.Collections.Generic
 open BenchmarkDotNet.Attributes
 open BenchmarkDotNet.Running
 
-open System.Runtime.CompilerServices
 
 [<Measure>] type JobId
 [<Measure>] type MachineId
@@ -34,29 +32,35 @@ type BitSetTracker (jobCount, machineCount, operationCount: int) =
     member internal _.Values = buckets
 
     member _.Add (jobId: int<JobId>, machineId: int<MachineId>, operationId: int<OperationId>) =
+        
         if (int jobId) >= jobCount || (int jobId) < 0 then
             raise (IndexOutOfRangeException (nameof jobId))
+        
         if (int machineId) >= machineCount || (int machineId) < 0 then
             raise (IndexOutOfRangeException (nameof machineId))
+        
         if (int operationId) >= operationCount || (int operationId) < 0 then
             raise (IndexOutOfRangeException (nameof operationId))
 
         let location = int jobId
-        let location = location*machineCount    + int machineId
-        let location = location*operationCount  + int operationId
+        let location = location * machineCount    + (int machineId)
+        let location = location * operationCount  + (int operationId)
         // The int64 we will need to lookup
-        let bucket = location >>> 6
+        let bucket = location / 64
         // The bit in the int64 we want to return
-        let offset = location &&& 0x3F
+        let offset = location - bucket * 64
         // Set the bit in the bucket to 1
         buckets[bucket] <- buckets[bucket] ||| (1UL <<< offset)
 
 
     member _.Remove (jobId: int<JobId>, machineId: int<MachineId>, operationId: int<OperationId>) =
+        
         if (int jobId) >= jobCount || (int jobId) < 0 then
             raise (IndexOutOfRangeException (nameof jobId))
+        
         if (int machineId) >= machineCount || (int machineId) < 0 then
             raise (IndexOutOfRangeException (nameof machineId))
+        
         if (int operationId) >= operationCount || (int operationId) < 0 then
             raise (IndexOutOfRangeException (nameof operationId))
 
@@ -64,9 +68,9 @@ type BitSetTracker (jobCount, machineCount, operationCount: int) =
         let location = location*machineCount    + int machineId
         let location = location*operationCount  + int operationId
         // The int64 we will need to lookup
-        let bucket = location >>> 6
+        let bucket = location / 64
         // The bit in the int64 we want to return
-        let offset = location &&& 0x3F
+        let offset = location - bucket * 64
         // Set the bit in the bucket to 0
         buckets[bucket] <- buckets[bucket] &&& ~~~(1UL <<< offset)
 
@@ -108,17 +112,13 @@ module Details =
     //  an inline function. Tuples return values are optimized away
     //  release builds at least.
     let inline computeBucketAndMask (jobId: int<JobId>) jobCount (machineId: int<MachineId>) machineCount (operationId: int<OperationId>) operationCount =
-        // mrange: A crude optimization here is to not these checks and let
-        //  it crash if the index is out of bounds
-        //  One check that is missing here if the ids are negative.
-        //  That can be avoided with uints
-//        if (int jobId) >= jobCount || (int jobId) < 0 then
+
         if (uint jobId) >= (uint jobCount) then
             raise (IndexOutOfRangeException (nameof jobId))
-//        if (int machineId) >= machineCount || (int machineId) < 0 then
+
         if (uint machineId) >= (uint machineCount) then
             raise (IndexOutOfRangeException (nameof machineId))
-//        if (int operationId) >= operationCount || (int operationId) < 0 then
+
         if (uint operationId) >= (uint operationCount) then
             raise (IndexOutOfRangeException (nameof operationId))
 
@@ -130,8 +130,8 @@ module Details =
         //  running 3 independent multiplications is faster than 2 dependent
         //  ones.
         let location  = int jobId
-        let location  = location * machineCount    + int machineId
-        let location  = location * operationCount  + int operationId
+        let location  = location * machineCount   + (int machineId)
+        let location  = location * operationCount + (int operationId)
         let bucket    = location >>> 6
         let offset    = location &&& 0x3F
         let mask      = 1UL <<< offset
@@ -174,8 +174,7 @@ type InliningBitSetTracker (jobCount, machineCount, operationCount: int) =
 [<MemoryDiagnoser>]
 type Benchmarks () =
 
-    let rng               = Random 123
-
+    let rng            = Random 123
     let jobIdBound        = 1_000
     let machineIdBound    = 10
     let operationIdBound  = 100
@@ -195,10 +194,6 @@ type Benchmarks () =
             values[rng.Next values.Length]
         |]
 
-    // mrange: I did some perf runs of my own and if I start filling up the
-    //  the bitsets the HashSet based solution can't keep up due to
-    //  it being much less efficient with memory
-    //  However, for smaller numbers like this HashSet does pretty good.
     let addCount = 20
     let addValues =
         [|for _ in 1..addCount ->
@@ -218,7 +213,6 @@ type Benchmarks () =
         for jobId, machineId, operationId in values do
             b.Add (jobId, machineId, operationId)
         b
-
 
     let inliningBitSet =
         let b = InliningBitSetTracker (jobIdBound, machineIdBound, operationIdBound)

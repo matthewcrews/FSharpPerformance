@@ -15,13 +15,13 @@ AMD Ryzen 9 3900X, 1 CPU, 24 logical and 12 physical cores
 ```
 
 
-|           Method |         Mean |        Error |       StdDev |  Gen 0 |  Gen 1 | Allocated |
-|----------------- |-------------:|-------------:|-------------:|-------:|-------:|----------:|
-|       HashSetAdd |    129.45 ns |     2.287 ns |     3.206 ns |      - |      - |         - |
-|        BitSetAdd |     84.67 ns |     1.521 ns |     1.348 ns |      - |      - |         - |
-|    BitSetAddMany |     72.62 ns |     1.421 ns |     1.520 ns |      - |      - |         - |
-|    HashSetRemove |    127.28 ns |     2.496 ns |     3.157 ns |      - |      - |         - |
-|     BitSetRemove |     88.75 ns |     1.783 ns |     3.028 ns |      - |      - |         - |
-| BitSetRemoveMany |     72.25 ns |     0.767 ns |     0.718 ns |      - |      - |         - |
-|       HashSetMap | 84,898.33 ns | 1,636.419 ns | 2,009.670 ns | 5.7373 | 0.4883 |  49,016 B |
-|        BitSetMap | 31,206.59 ns |   606.957 ns |   623.300 ns | 5.7983 | 0.5493 |  48,976 B |
+|               Method |         Mean |      Error |       StdDev |  Gen 0 |  Gen 1 | Allocated |
+|--------------------- |-------------:|-----------:|-------------:|-------:|-------:|----------:|
+|           HashSetAdd |    121.78 ns |   1.309 ns |     1.224 ns |      - |      - |         - |
+|        HashSetRemove |    118.60 ns |   0.697 ns |     0.618 ns |      - |      - |         - |
+|           HashSetMap | 79,729.70 ns | 374.712 ns |   350.506 ns | 5.7373 | 0.4883 |  49,016 B |
+|            BitSetAdd |     66.24 ns |   0.180 ns |     0.160 ns |      - |      - |         - |
+|         BitSetRemove |     67.86 ns |   0.212 ns |     0.177 ns |      - |      - |         - |
+|            BitSetMap | 29,746.68 ns | 588.177 ns | 1,045.484 ns | 5.8289 | 0.5798 |  48,976 B |
+|    InliningBitSetAdd |     49.70 ns |   1.001 ns |     1.436 ns |      - |      - |         - |
+| InliningBitSetRemove |     50.01 ns |   1.027 ns |     1.716 ns |      - |      - |         - |
