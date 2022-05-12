@@ -170,6 +170,37 @@ type InliningBitSetTracker (jobCount, machineCount, operationCount: int) =
         let bucket          = buckets[bucketId]
         buckets[bucketId] <- bucket &&& ~~~mask
 
+    //        member inline x.Map ([<InlineIfLambda>] f: int<JobId> -> int<MachineId> -> int<OperationId> -> 'Result) =
+    member x.Map ( f: int<JobId> -> int<MachineId> -> int<OperationId> -> 'Result) =
+        let length = buckets.Length
+        let acc = Stack<'Result> (x.JobCount)
+        let mutable i = 0
+       
+        // Source of algorithm: https://lemire.me/blog/2018/02/21/iterating-over-set-bits-quickly/
+        while i < length do
+            let mutable bitSet = buckets[i]
+
+            while bitSet <> 0UL do
+                let r = System.Numerics.BitOperations.TrailingZeroCount bitSet
+                let location = i <<< 6 + r
+                let jobId =
+                    location / (x.MachineCount * x.OperationCount)
+                    |> LanguagePrimitives.Int32WithMeasure<JobId>
+                let machineId =
+                    (location - (int jobId) * (x.MachineCount * x.OperationCount)) / x.OperationCount
+                    |> LanguagePrimitives.Int32WithMeasure<MachineId>
+                let operationId =
+                    location - (int jobId) * (x.MachineCount * x.OperationCount) - (int machineId) * x.OperationCount
+                    |> LanguagePrimitives.Int32WithMeasure<OperationId>
+
+                let result = f jobId machineId operationId
+                acc.Push result
+
+                bitSet <- bitSet ^^^ (1UL <<< r)
+
+            i <- i + 1
+        acc.ToArray()
+
 
 [<MemoryDiagnoser>]
 type Benchmarks () =
