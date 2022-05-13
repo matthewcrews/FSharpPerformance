@@ -170,31 +170,29 @@ type InliningBitSetTracker (jobCount, machineCount, operationCount: int) =
         let bucket          = buckets[bucketId]
         buckets[bucketId] <- bucket &&& ~~~mask
 
-    //        member inline x.Map ([<InlineIfLambda>] f: int<JobId> -> int<MachineId> -> int<OperationId> -> 'Result) =
-    member x.Map ( f: int<JobId> -> int<MachineId> -> int<OperationId> -> 'Result) =
-        let length = buckets.Length
-        let acc = Stack<'Result> (x.JobCount)
+    member inline x.Map ([<InlineIfLambda>] f: int<JobId> -> int<MachineId> -> int<OperationId> -> 'Result) =
+        let acc = ResizeArray<'Result> (x.JobCount)
         let mutable i = 0
-       
-        // Source of algorithm: https://lemire.me/blog/2018/02/21/iterating-over-set-bits-quickly/
-        while i < length do
-            let mutable bitSet = buckets[i]
-
+        let machineMulOp = x.MachineCount * x.OperationCount
+        // Source of algorithm: https://lemire.me/blog/2018/02/21/iterating-over-set-bits-quickly/            
+        while i < x.Buckets.Length do
+            let mutable bitSet = x.Buckets[i]
+            
             while bitSet <> 0UL do
                 let r = System.Numerics.BitOperations.TrailingZeroCount bitSet
-                let location = i <<< 6 + r
+                let location = (i <<< 6) + r
                 let jobId =
-                    location / (x.MachineCount * x.OperationCount)
+                    location / machineMulOp
                     |> LanguagePrimitives.Int32WithMeasure<JobId>
+                let jobIdMulMachineMulOp = (int jobId) * machineMulOp
                 let machineId =
-                    (location - (int jobId) * (x.MachineCount * x.OperationCount)) / x.OperationCount
+                    (location - jobIdMulMachineMulOp) / x.OperationCount
                     |> LanguagePrimitives.Int32WithMeasure<MachineId>
                 let operationId =
-                    location - (int jobId) * (x.MachineCount * x.OperationCount) - (int machineId) * x.OperationCount
+                    location - jobIdMulMachineMulOp - (int machineId) * x.OperationCount
                     |> LanguagePrimitives.Int32WithMeasure<OperationId>
 
-                let result = f jobId machineId operationId
-                acc.Push result
+                acc.Add (f jobId machineId operationId)
 
                 bitSet <- bitSet ^^^ (1UL <<< r)
 
@@ -309,5 +307,9 @@ type Benchmarks () =
         for jobId, machineId, operationId in removeValues do
             inliningBitSet.Remove (jobId, machineId, operationId)
 
+    [<Benchmark>]
+    member _.InliningBitSetMap () =
+
+        inliningBitSet.Map (fun a b c -> struct (a, b, c))
 
 let _ = BenchmarkRunner.Run<Benchmarks>()
