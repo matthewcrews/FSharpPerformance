@@ -171,14 +171,13 @@ type InliningBitSetTracker (jobCount, machineCount, operationCount: int) =
         buckets[bucketId] <- bucket &&& ~~~mask
 
     //        member inline x.Map ([<InlineIfLambda>] f: int<JobId> -> int<MachineId> -> int<OperationId> -> 'Result) =
-    member x.Map ( f: int<JobId> -> int<MachineId> -> int<OperationId> -> 'Result) =
-        let length = buckets.Length
+    member inline x.Map ([<InlineIfLambda>] f: int<JobId> -> int<MachineId> -> int<OperationId> -> 'Result) =
         let acc = Stack<'Result> (x.JobCount)
         let mutable i = 0
        
         // Source of algorithm: https://lemire.me/blog/2018/02/21/iterating-over-set-bits-quickly/
-        while i < length do
-            let mutable bitSet = buckets[i]
+        while i < x.Buckets.Length do
+            let mutable bitSet = x.Buckets[i]
 
             while bitSet <> 0UL do
                 let r = System.Numerics.BitOperations.TrailingZeroCount bitSet
@@ -309,5 +308,9 @@ type Benchmarks () =
         for jobId, machineId, operationId in removeValues do
             inliningBitSet.Remove (jobId, machineId, operationId)
 
+    [<Benchmark>]
+    member _.InliningBitSetMap () =
+
+        inliningBitSet.Map (fun a b c -> struct (a, b, c))
 
 let _ = BenchmarkRunner.Run<Benchmarks>()
