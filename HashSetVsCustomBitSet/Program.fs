@@ -170,30 +170,29 @@ type InliningBitSetTracker (jobCount, machineCount, operationCount: int) =
         let bucket          = buckets[bucketId]
         buckets[bucketId] <- bucket &&& ~~~mask
 
-    //        member inline x.Map ([<InlineIfLambda>] f: int<JobId> -> int<MachineId> -> int<OperationId> -> 'Result) =
     member inline x.Map ([<InlineIfLambda>] f: int<JobId> -> int<MachineId> -> int<OperationId> -> 'Result) =
         let acc = Stack<'Result> (x.JobCount)
         let mutable i = 0
-       
+        let machineMulOp = x.MachineCount * x.OperationCount
         // Source of algorithm: https://lemire.me/blog/2018/02/21/iterating-over-set-bits-quickly/
         while i < x.Buckets.Length do
             let mutable bitSet = x.Buckets[i]
-
+            
             while bitSet <> 0UL do
                 let r = System.Numerics.BitOperations.TrailingZeroCount bitSet
                 let location = i <<< 6 + r
                 let jobId =
-                    location / (x.MachineCount * x.OperationCount)
+                    location / machineMulOp
                     |> LanguagePrimitives.Int32WithMeasure<JobId>
+                let jobIdMulMachineMulOp = (int jobId) * machineMulOp
                 let machineId =
-                    (location - (int jobId) * (x.MachineCount * x.OperationCount)) / x.OperationCount
+                    (location - jobIdMulMachineMulOp) / x.OperationCount
                     |> LanguagePrimitives.Int32WithMeasure<MachineId>
                 let operationId =
-                    location - (int jobId) * (x.MachineCount * x.OperationCount) - (int machineId) * x.OperationCount
+                    location - jobIdMulMachineMulOp - (int machineId) * x.OperationCount
                     |> LanguagePrimitives.Int32WithMeasure<OperationId>
 
-                let result = f jobId machineId operationId
-                acc.Push result
+                acc.Push (f jobId machineId operationId)
 
                 bitSet <- bitSet ^^^ (1UL <<< r)
 
@@ -251,42 +250,42 @@ type Benchmarks () =
         b
 
 
-    [<Benchmark>]
-    member _.HashSetAdd () =
-
-        for jobId, machineId, operationId in addValues do
-            let assignment = Assignment.create jobId machineId operationId
-            hashSet.Add assignment |> ignore
-
-
-    [<Benchmark>]
-    member _.HashSetRemove () =
-
-        for jobId, machineId, operationId in removeValues do
-            let assignment = Assignment.create jobId machineId operationId
-            hashSet.Remove assignment |> ignore
-
-
-    [<Benchmark>]
-    member _.HashSetMap () =
-
-        hashSet
-        |> Seq.map Assignment.decompose
-        |> Seq.toArray
+//    [<Benchmark>]
+//    member _.HashSetAdd () =
+//
+//        for jobId, machineId, operationId in addValues do
+//            let assignment = Assignment.create jobId machineId operationId
+//            hashSet.Add assignment |> ignore
+//
+//
+//    [<Benchmark>]
+//    member _.HashSetRemove () =
+//
+//        for jobId, machineId, operationId in removeValues do
+//            let assignment = Assignment.create jobId machineId operationId
+//            hashSet.Remove assignment |> ignore
 
 
-    [<Benchmark>]
-    member _.BitSetAdd () =
+//    [<Benchmark>]
+//    member _.HashSetMap () =
+//
+//        hashSet
+//        |> Seq.map Assignment.decompose
+//        |> Seq.toArray
 
-        for jobId, machineId, operationId in addValues do
-            bitSet.Add (jobId, machineId, operationId)
-
-
-    [<Benchmark>]
-    member _.BitSetRemove () =
-
-        for jobId, machineId, operationId in removeValues do
-            bitSet.Remove (jobId, machineId, operationId)
+//
+//    [<Benchmark>]
+//    member _.BitSetAdd () =
+//
+//        for jobId, machineId, operationId in addValues do
+//            bitSet.Add (jobId, machineId, operationId)
+//
+//
+//    [<Benchmark>]
+//    member _.BitSetRemove () =
+//
+//        for jobId, machineId, operationId in removeValues do
+//            bitSet.Remove (jobId, machineId, operationId)
 
 
     [<Benchmark>]
@@ -295,18 +294,18 @@ type Benchmarks () =
         bitSet.Map (fun a b c -> struct (a, b, c))
 
 
-    [<Benchmark>]
-    member _.InliningBitSetAdd () =
-
-        for jobId, machineId, operationId in addValues do
-            inliningBitSet.Add (jobId, machineId, operationId)
-
-
-    [<Benchmark>]
-    member _.InliningBitSetRemove () =
-
-        for jobId, machineId, operationId in removeValues do
-            inliningBitSet.Remove (jobId, machineId, operationId)
+//    [<Benchmark>]
+//    member _.InliningBitSetAdd () =
+//
+//        for jobId, machineId, operationId in addValues do
+//            inliningBitSet.Add (jobId, machineId, operationId)
+//
+//
+//    [<Benchmark>]
+//    member _.InliningBitSetRemove () =
+//
+//        for jobId, machineId, operationId in removeValues do
+//            inliningBitSet.Remove (jobId, machineId, operationId)
 
     [<Benchmark>]
     member _.InliningBitSetMap () =
