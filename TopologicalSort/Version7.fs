@@ -1,7 +1,9 @@
-﻿module TopologicalSort.Version6
+﻿module TopologicalSort.Version7
 
 open System.Collections.Generic
 open TopologicalSort.Row
+
+
 
 
 [<Measure>] type Node
@@ -10,19 +12,65 @@ open TopologicalSort.Row
 
 module Edge =
 
-    let create (source: int<Node>) (target: int<Node>) =
+    let inline create (source: int<Node>) (target: int<Node>) =
         (((int64 source) <<< 32) ||| (int64 target))
         |> LanguagePrimitives.Int64WithMeasure<Edge>
         
-    let getSource (edge: int64<Edge>) =
+    let inline getSource (edge: int64<Edge>) =
         ((int64 edge) >>> 32)
         |> int
         |> LanguagePrimitives.Int32WithMeasure<Node>
 
-    let getTarget (edge: int64<Edge>) =
+    let inline getTarget (edge: int64<Edge>) =
         int edge
         |> LanguagePrimitives.Int32WithMeasure<Node>
 
+
+type EdgeTracker (nodeCount: int) =
+    let bitsRequired = ((nodeCount * nodeCount) + 63) / 64
+    let values = Array.create bitsRequired 0UL
+    
+    member b.NodeCount = nodeCount
+    member b.Values = values
+    
+    member inline b.Add (edge: int64<Edge>) =
+        let source = Edge.getSource edge
+        let target = Edge.getTarget edge
+        let location = (int source) * b.NodeCount + (int target)
+        let bucket = location >>> 6
+        let offset = location &&& 0x3F
+        let mask = 1UL <<< offset
+        b.Values[bucket] <- b.Values[bucket] ||| mask
+        
+    member inline b.Remove (edge: int64<Edge>) =
+        let source = Edge.getSource edge
+        let target = Edge.getTarget edge
+        let location = (int source) * b.NodeCount + (int target)
+        let bucket = location >>> 6
+        let offset = location &&& 0x3F
+        let mask = 1UL <<< offset
+        b.Values[bucket] <- b.Values[bucket] &&& (~~~mask)
+
+    member inline b.Contains (edge: int64<Edge>) =
+        let source = Edge.getSource edge
+        let target = Edge.getTarget edge
+        let location = (int source) * b.NodeCount + (int target)
+        let bucket = location >>> 6
+        let offset = location &&& 0x3F
+        ((b.Values[bucket] >>> offset) &&& 1UL) = 1UL
+
+    member b.Clear () =
+        for i = 0 to b.Values.Length - 1 do
+            b.Values[i] <- 0UL
+
+    member b.Count =
+        let mutable count = 0
+        
+        for i = 0 to b.Values.Length - 1 do
+            count <- count + (System.Numerics.BitOperations.PopCount b.Values[i])
+
+        count
+        
 
 type Graph =
     {
@@ -92,19 +140,18 @@ module Graph =
 [<RequireQualifiedAccess>]
 module Topological =
 
-    let private toProcess = Stack ()
+    let private toProcess = Stack<int<Node>> ()
     let private sortedNodes = Queue<int<Node>> ()
-    let private remainingEdges = HashSet<int64<Edge>> ()
     
     let sort (graph: Graph) =
             
         toProcess.Clear()
         sortedNodes.Clear()
-        remainingEdges.Clear ()
+        let remainingEdges = EdgeTracker graph.Nodes.Length
         
         for node in graph.Origins do
             toProcess.Push node    
-
+    
         for edge in graph.Edges do
             remainingEdges.Add edge |> ignore
         

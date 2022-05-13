@@ -178,6 +178,35 @@ module V6Data =
     let graph = Graph.create edges
     
     
+module V7Data =
+
+    open TopologicalSort.Version7
+
+    let nodes =
+        [|
+            0<Node>
+            1<Node>
+            2<Node>
+            3<Node>
+            4<Node>
+            5<Node>
+        |]
+
+    let edges =
+        [|
+            Edge.create nodes[0] nodes[1]
+            Edge.create nodes[0] nodes[2]
+            Edge.create nodes[1] nodes[3]
+            Edge.create nodes[1] nodes[4]
+            Edge.create nodes[2] nodes[1]
+            Edge.create nodes[2] nodes[4]
+            Edge.create nodes[3] nodes[5]
+            Edge.create nodes[4] nodes[5]
+        |]
+        
+    let graph = Graph.create edges
+    
+    
 [<MemoryDiagnoser>]
 [<HardwareCounters(HardwareCounter.BranchMispredictions,
                    HardwareCounter.BranchInstructions,
@@ -237,6 +266,14 @@ type Benchmarks () =
         match result with
         | Some _ -> 1
         | None -> 1
+        
+    [<Benchmark>]
+    member _.V7 () =
+    
+        let result = Version7.Topological.sort V7Data.graph
+        match result with
+        | Some _ -> 1
+        | None -> 1
 
 
 let profile (version: string) loopCount =
@@ -268,6 +305,10 @@ let profile (version: string) loopCount =
     | "v6" ->
         for i in 1 .. loopCount do
             result <- result + b.V6 ()
+            
+    | "v7" ->
+        for i in 1 .. loopCount do
+            result <- result + b.V7 ()
             
     | unknownVersion -> failwith $"Unknown version: {unknownVersion}" 
             
