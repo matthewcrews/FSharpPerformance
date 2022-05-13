@@ -250,42 +250,42 @@ type Benchmarks () =
         b
 
 
-//    [<Benchmark>]
-//    member _.HashSetAdd () =
-//
-//        for jobId, machineId, operationId in addValues do
-//            let assignment = Assignment.create jobId machineId operationId
-//            hashSet.Add assignment |> ignore
-//
-//
-//    [<Benchmark>]
-//    member _.HashSetRemove () =
-//
-//        for jobId, machineId, operationId in removeValues do
-//            let assignment = Assignment.create jobId machineId operationId
-//            hashSet.Remove assignment |> ignore
+    [<Benchmark>]
+    member _.HashSetAdd () =
+
+        for jobId, machineId, operationId in addValues do
+            let assignment = Assignment.create jobId machineId operationId
+            hashSet.Add assignment |> ignore
 
 
-//    [<Benchmark>]
-//    member _.HashSetMap () =
-//
-//        hashSet
-//        |> Seq.map Assignment.decompose
-//        |> Seq.toArray
+    [<Benchmark>]
+    member _.HashSetRemove () =
 
-//
-//    [<Benchmark>]
-//    member _.BitSetAdd () =
-//
-//        for jobId, machineId, operationId in addValues do
-//            bitSet.Add (jobId, machineId, operationId)
-//
-//
-//    [<Benchmark>]
-//    member _.BitSetRemove () =
-//
-//        for jobId, machineId, operationId in removeValues do
-//            bitSet.Remove (jobId, machineId, operationId)
+        for jobId, machineId, operationId in removeValues do
+            let assignment = Assignment.create jobId machineId operationId
+            hashSet.Remove assignment |> ignore
+
+
+    [<Benchmark>]
+    member _.HashSetMap () =
+
+        hashSet
+        |> Seq.map Assignment.decompose
+        |> Seq.toArray
+
+
+    [<Benchmark>]
+    member _.BitSetAdd () =
+
+        for jobId, machineId, operationId in addValues do
+            bitSet.Add (jobId, machineId, operationId)
+
+
+    [<Benchmark>]
+    member _.BitSetRemove () =
+
+        for jobId, machineId, operationId in removeValues do
+            bitSet.Remove (jobId, machineId, operationId)
 
 
     [<Benchmark>]
@@ -294,18 +294,18 @@ type Benchmarks () =
         bitSet.Map (fun a b c -> struct (a, b, c))
 
 
-//    [<Benchmark>]
-//    member _.InliningBitSetAdd () =
-//
-//        for jobId, machineId, operationId in addValues do
-//            inliningBitSet.Add (jobId, machineId, operationId)
-//
-//
-//    [<Benchmark>]
-//    member _.InliningBitSetRemove () =
-//
-//        for jobId, machineId, operationId in removeValues do
-//            inliningBitSet.Remove (jobId, machineId, operationId)
+    [<Benchmark>]
+    member _.InliningBitSetAdd () =
+
+        for jobId, machineId, operationId in addValues do
+            inliningBitSet.Add (jobId, machineId, operationId)
+
+
+    [<Benchmark>]
+    member _.InliningBitSetRemove () =
+
+        for jobId, machineId, operationId in removeValues do
+            inliningBitSet.Remove (jobId, machineId, operationId)
 
     [<Benchmark>]
     member _.InliningBitSetMap () =
