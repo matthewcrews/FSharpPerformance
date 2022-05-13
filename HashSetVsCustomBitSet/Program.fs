@@ -171,16 +171,16 @@ type InliningBitSetTracker (jobCount, machineCount, operationCount: int) =
         buckets[bucketId] <- bucket &&& ~~~mask
 
     member inline x.Map ([<InlineIfLambda>] f: int<JobId> -> int<MachineId> -> int<OperationId> -> 'Result) =
-        let acc = Stack<'Result> (x.JobCount)
+        let acc = ResizeArray<'Result> (x.JobCount)
         let mutable i = 0
         let machineMulOp = x.MachineCount * x.OperationCount
-        // Source of algorithm: https://lemire.me/blog/2018/02/21/iterating-over-set-bits-quickly/
+        // Source of algorithm: https://lemire.me/blog/2018/02/21/iterating-over-set-bits-quickly/            
         while i < x.Buckets.Length do
             let mutable bitSet = x.Buckets[i]
             
             while bitSet <> 0UL do
                 let r = System.Numerics.BitOperations.TrailingZeroCount bitSet
-                let location = i <<< 6 + r
+                let location = (i <<< 6) + r
                 let jobId =
                     location / machineMulOp
                     |> LanguagePrimitives.Int32WithMeasure<JobId>
@@ -192,7 +192,7 @@ type InliningBitSetTracker (jobCount, machineCount, operationCount: int) =
                     location - jobIdMulMachineMulOp - (int machineId) * x.OperationCount
                     |> LanguagePrimitives.Int32WithMeasure<OperationId>
 
-                acc.Push (f jobId machineId operationId)
+                acc.Add (f jobId machineId operationId)
 
                 bitSet <- bitSet ^^^ (1UL <<< r)
 
