@@ -1,4 +1,8 @@
-module TopologicalSort.Version1
+﻿module TopologicalSort.Version3
+
+open System.Collections.Generic
+open System.Collections.ObjectModel
+
 
 type Node =
     {
@@ -11,16 +15,16 @@ type Edge =
         Target : Node
     }
 
-type Sources = Map<Node, Edge list>
-type Targets = Map<Node, Edge list>
+type Sources = Dictionary<Node, Edge list>
+type Targets = Dictionary<Node, Edge list>
 
 type Graph =
     {
         Nodes : Node list
         Origins : Node list
         Edges : Edge Set
-        Sources : Sources
-        Targets : Targets
+        Sources : ReadOnlyDictionary<Node, Edge list>
+        Targets : ReadOnlyDictionary<Node, Edge list>
     }
     
 module Graph =
@@ -47,23 +51,26 @@ module Graph =
             match edges with
             | edge::remaining ->
                 let newNodeSources =
-                    match sources.TryFind edge.Target with
-                    | Some sourceNodes -> edge :: sourceNodes
-                    | None -> [edge]
-                let sources = sources.Add (edge.Target, newNodeSources)
+                    match sources.TryGetValue edge.Target with
+                    | true, sourceNodes -> edge :: sourceNodes
+                    | false, _ -> [edge]
+                sources[edge.Target] <- newNodeSources
                 
                 let newNodeTargets =
-                    match targets.TryFind edge.Source with
-                    | Some targetNodes -> edge :: targetNodes
-                    | None -> [edge]
-                let targets = targets.Add (edge.Source, newNodeTargets)
+                    match targets.TryGetValue edge.Source with
+                    | true, targetNodes -> edge :: targetNodes
+                    | false, _ -> [edge]
+                targets[edge.Source] <- newNodeTargets
                 
                 loop remaining sources targets
                 
-            | [] -> sources, targets
+            | [] -> ReadOnlyDictionary sources, ReadOnlyDictionary targets
             
-        loop edges Map.empty Map.empty
-    
+        let sources = Dictionary()
+        let targets = Dictionary ()
+        loop edges sources targets
+
+        
     let create (edges: Edge list) =
         let nodes = getDistinctNodes edges
         let sources, targets = createSourcesAndTargets edges
@@ -79,14 +86,14 @@ module Graph =
             Origins = originNodes
         }
      
+     
 [<RequireQualifiedAccess>]
 module Topological =
-        
 
     let sort (graph: Graph) =
             
-        let processEdge (graph: Graph) (remainingEdges: Edge Set, toProcess: Node list) (edge: Edge) =
-            let remainingEdges = remainingEdges.Remove edge
+        let processEdge (graph: Graph) (remainingEdges: Edge HashSet, toProcess: Node list) (edge: Edge) =
+            remainingEdges.Remove edge |> ignore
             let noRemainingSources =
                 graph.Sources[edge.Target]
                 |> List.forall (remainingEdges.Contains >> not)
@@ -98,17 +105,17 @@ module Topological =
                 remainingEdges, toProcess
         
         
-        let rec loop (graph: Graph) (remainingEdges: Edge Set) (toProcess: Node list) (sortedNodes: Node list) =
+        let rec loop (graph: Graph) (remainingEdges: Edge HashSet) (toProcess: Node list) (sortedNodes: Node list) =
             match toProcess with
             | nextNode::toProcess ->
                 
-                match graph.Targets.TryFind nextNode with
-                | Some nodeTargets ->
+                match graph.Targets.TryGetValue nextNode with
+                | true, nodeTargets ->
                     let remainingEdges, toProcess =
                         ((remainingEdges, toProcess), nodeTargets)
                         ||> List.fold (processEdge graph)
                     loop graph remainingEdges toProcess (nextNode :: sortedNodes)
-                | None ->
+                | false, _ ->
                     loop graph remainingEdges toProcess (nextNode :: sortedNodes)
                         
             | [] ->
@@ -118,5 +125,5 @@ module Topological =
                     // Items have been stored in reverse order
                     Some (List.rev sortedNodes)
 
-        let remainingEdges = Set graph.Edges
+        let remainingEdges = HashSet graph.Edges
         loop graph remainingEdges graph.Origins []

@@ -1,4 +1,7 @@
-module TopologicalSort.Version1
+﻿module TopologicalSort.Version2
+
+open System.Collections.Generic
+
 
 type Node =
     {
@@ -85,8 +88,8 @@ module Topological =
 
     let sort (graph: Graph) =
             
-        let processEdge (graph: Graph) (remainingEdges: Edge Set, toProcess: Node list) (edge: Edge) =
-            let remainingEdges = remainingEdges.Remove edge
+        let processEdge (graph: Graph) (remainingEdges: Edge HashSet, toProcess: Node list) (edge: Edge) =
+            remainingEdges.Remove edge |> ignore
             let noRemainingSources =
                 graph.Sources[edge.Target]
                 |> List.forall (remainingEdges.Contains >> not)
@@ -98,7 +101,7 @@ module Topological =
                 remainingEdges, toProcess
         
         
-        let rec loop (graph: Graph) (remainingEdges: Edge Set) (toProcess: Node list) (sortedNodes: Node list) =
+        let rec loop (graph: Graph) (remainingEdges: Edge HashSet) (toProcess: Node list) (sortedNodes: Node list) =
             match toProcess with
             | nextNode::toProcess ->
                 
@@ -118,5 +121,5 @@ module Topological =
                     // Items have been stored in reverse order
                     Some (List.rev sortedNodes)
 
-        let remainingEdges = Set graph.Edges
+        let remainingEdges = HashSet graph.Edges
         loop graph remainingEdges graph.Origins []
