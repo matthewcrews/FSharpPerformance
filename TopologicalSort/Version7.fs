@@ -78,15 +78,37 @@ type Array with
             i <- i + 1
 
         found
+    
+    /// <summary>
+    /// Iterates over the array applying f to each Vector sized chunk
+    /// </summary>
+    /// <param name="f">Accepts a Vector</param>
+    /// <param name="array"></param>
+    static member inline SIMDiter
+        ([<InlineIfLambda>] vf : Vector< ^T> -> unit) 
+        ([<InlineIfLambda>] sf : ^T -> unit) 
+        (array : ^T[]) : unit  =
+            
+        let len = array.Length        
+        let count = Vector< ^T>.Count
         
+        let mutable i = 0    
+        while i <= len-count do
+            vf (Vector< ^T>(array,i ))
+            i <- i + count
+        
+        i <- len-len%count
+        while i < array.Length do
+            sf array.[i]
+            i <- i + 1
     /// <summary>
     /// Checks if all Vectors satisfy the predicate.
     /// </summary>
     /// <param name="f">Takes a Vector and returns true or false</param>
     /// <param name="array"></param>
     static member inline SIMDforall 
-        (vf : ^T Vector -> bool) 
-        (sf : ^T -> bool)
+        ( [<InlineIfLambda>] vf : ^T Vector -> bool) 
+        ( [<InlineIfLambda>] sf : ^T -> bool)
         (array: ^T[]) : bool =
        
         let count = Vector< ^T>.Count
@@ -194,62 +216,109 @@ module Topological =
     let  private sortedNodes = Queue<int<Node>> (16)
     let  private remainingEdges = HashSet<int64<Edge>> (16)
     
-    let inline private targetFn graph edge =
-        let target = Edge.getTarget edge
-        remainingEdges.Remove edge |> ignore
-//        let remEdges = Vector<int64<Edge>>(remainingEdges.ToArray().AsSpan())
-//        Array.SIMDcontains 
-//        let remEdgesContains x = Vector<int64<Edge>>(remainingEdges.ToArray()) |> Array.SIMDcontains x
-        
-        let noRemainingSources =
-            graph.Sources[target]
-            |> Array.forall (fun x -> Array.SIMDcontains x (remainingEdges.ToArray()))
-            
-        if noRemainingSources then
-            toProcess.Push target
-        
-//        
-//        let remSrc = Vector<int64<Edge>>(graph.Sources[target].AsSpan())
-////        Array.SIMDforall 
-//        let noRemainingSources =
-//            graph.Sources[target]
-//            |> Array.forall (remainingEdges.Contains >> not)
+//    let mutable private  sources =  ReadOnlyRow([||])
+//    let inline private targetFn graph edge =
+//        let target = Edge.getTarget edge
+//        remainingEdges.Remove edge |> ignore
+////        let remEdges = Vector<int64<Edge>>(remainingEdges.ToArray().AsSpan())
+////        Array.SIMDcontains 
+////        let remEdgesContains x = Vector<int64<Edge>>(remainingEdges.ToArray()) |> Array.SIMDcontains x
+//        let arr = remainingEdges.ToArray()
+////        let remSrc = Vector<int64<Edge>>(graph.Sources[target].AsSpan())
+//
+//        let noRemainingSources =  graph.Sources[target] |> Array.SIMDforall (fun vf ->  Vector.EqualsAny(vf, Vector<int64<Edge>>(arr.AsSpan()))) (fun x -> Array.SIMDcontains x arr) 
+////        let noRemainingSources =
+////            graph.Sources[target]
+////            |> Array.forall (fun x -> Array.SIMDcontains x arr)
 //            
 //        if noRemainingSources then
 //            toProcess.Push target
+//        
+//    
+//    let inline private targetFn2 graph edge =
+//        let target = Edge.getTarget edge
+//        remainingEdges.Remove edge |> ignore
+//        let arr = remainingEdges.ToArray()
+//        let noRemainingSources =
+//            graph.Sources[target]
+//            |> Array.forall (fun x -> not (Array.SIMDcontains x arr))
+////        let noRemainingSources =  graph.Sources[target]
+////                                  |> Array.SIMDforall
+////                                         (fun vf ->
+////                                           not (Vector.EqualsAny(vf, Vector<int64<Edge>>(arr.AsSpan())))
+////                                          )
+////                                         (fun x -> not(Array.SIMDcontains x arr))
+//        if noRemainingSources then
+//            toProcess.Push target
+//    
+//    
+    
+    let notContains item = not (remainingEdges.Contains(item))
+    let inline notContains2 item arr = not(Array.SIMDcontains item arr)
     let sort (graph: Graph) =
             
         toProcess.Clear()
         sortedNodes.Clear()
         remainingEdges.Clear ()
         
+        
         for node in graph.Origins do
-            toProcess.Push node    
+            toProcess.Push node
+ 
     
         for edge in graph.Edges do
             remainingEdges.Add edge |> ignore
         
-                
+//        sources <- graph.Sources
+            
+//        let tfnGp = targetFn2 graph
         while toProcess.Count > 0 do
             let nextNode = toProcess.Pop()
             sortedNodes.Enqueue nextNode
-            
-            graph.Targets[nextNode]
-            |> Array.iter (fun edge -> targetFn graph edge)
             
 //            graph.Targets[nextNode]
 //            |> Array.iter (fun edge ->
 //                let target = Edge.getTarget edge
 //                remainingEdges.Remove edge |> ignore
-//                
+////                let arr = remainingEdges.ToArray()
 //                let noRemainingSources =
-//                    graph.Sources[target]
-//                    |> Array.forall (remainingEdges.Contains >> not)
-//                    
+//                    sources[target]
+//                    |> Array.forall (notContains)
 //                if noRemainingSources then
 //                    toProcess.Push target
-//            
 //            )
+            
+            graph.Targets[nextNode]
+            |> Array.iter (fun edge -> //can't use Parallel.iter because it breaks remainingSources stuff
+                let target = Edge.getTarget edge
+                remainingEdges.Remove edge |> ignore
+                
+                let noRemainingSources =
+                    graph.Sources[target]
+                    |> Array.forall notContains
+                    
+                if noRemainingSources then
+                    toProcess.Push target
+            
+            )
+            
+            
+            
+//            graph.Targets[nextNode]
+//            |> Array.iter tfnGp
+            
+//            for edge in graph.Targets[nextNode] do
+//                let target = Edge.getTarget edge
+//                remainingEdges.Remove edge |> ignore
+//                let arr = remainingEdges.ToArray()
+//                let noRemainingSources =  graph.Sources[target]
+//                                          |> Array.SIMDforall
+//                                                 (fun vf ->
+//                                                   not (Vector.EqualsAny(vf, Vector<int64<Edge>>(arr.AsSpan())))
+//                                                  )
+//                                                 (fun x -> not(Array.SIMDcontains x arr))
+//                if noRemainingSources then
+//                    toProcess.Push target
 
         if remainingEdges.Count > 0 then
             None

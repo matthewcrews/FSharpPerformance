@@ -272,8 +272,11 @@ type Benchmarks () =
     
         let result = Version7.Topological.sort V7Data.graph
         match result with
-        | Some _ -> 1
-        | None -> 1
+        | Some _ ->
+            1
+        | None ->
+            printfn "v7 res is null"
+            1
 
 
 let profile (version: string) loopCount =
