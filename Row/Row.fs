@@ -28,7 +28,7 @@ module private Helpers =
         newValues
 
 
-    let inline zeroCreateUnchecked (count:int) =
+    let inline zeroCreateUnchecked (count:int) : 'T[] =
         (# "newarr !0" type ('T) count : 'T array #)
 
 
