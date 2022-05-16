@@ -27,11 +27,12 @@ module private Helpers =
         
         newValues
 
-    let invalidArgDifferentRowLength rowAName lengthA rowBName lengthB =
+
+    let inline invalidArgDifferentRowLength rowAName lengthA rowBName lengthB =
         $"{rowAName}.Length = {lengthA}, {rowBName}.Length = {lengthB}"
 
 
-type Row<[<Measure>] 'Measure, 'T>(values: array<'T>) =
+type Row<[<Measure>] 'Measure, 'T>(values: 'T[]) =
     
     do if isNull values then
         raise (System.ArgumentNullException(nameof values)) 
@@ -51,7 +52,7 @@ type Row<[<Measure>] 'Measure, 'T>(values: array<'T>) =
         Row<'Measure, 'T> newValues
         
     // Must be public to support inline
-    member _.Values : 'T array = values
+    member _.Values : 'T[] = values
 
 
     member r.Item
@@ -268,7 +269,7 @@ module Row =
         accv
 
 
-type ReadOnlyRow<[<Measure>] 'Measure, 'T>(values: array<'T>) =
+type ReadOnlyRow<[<Measure>] 'Measure, 'T>(values: 'T[]) =
     
     do if isNull values then
         raise (System.ArgumentNullException(nameof values))
@@ -279,13 +280,13 @@ type ReadOnlyRow<[<Measure>] 'Measure, 'T>(values: array<'T>) =
         ReadOnlyRow<'Measure, 'T> newValues
     
     
-    // Must be publish to support inline
+    // Must be public to support inline
     member _.Values = values
 
 
-    member _.Item
-        with get (i: int<'Measure>) =
-            values[int i]
+    member r.Item
+        with inline get (i: int<'Measure>) =
+            r.Values[int i]
 
     
     member _.Length = LanguagePrimitives.Int32WithMeasure<'Measure> values.Length
