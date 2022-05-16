@@ -10,7 +10,8 @@ let sizes =
     [|0 .. chickenCount - 1|]
     |> Row<ChickenId, _>
 
-let ages = Row.create 10<ChickenId> 1
+let ages =
+    Row.create 10<ChickenId> 1
 
 // Compiler error
 let chicken0Size = sizes[0]
@@ -41,7 +42,15 @@ let nameAndSize =
     (names, sizes)
     ||> Row.map2 (fun n s -> $"Name: {n} Size: {s}")
 
-    
+
+// type Chicken =
+//     {
+//         Size : float
+//         Name : string
+//         Age : int
+//     }
+// let chickens : Chicken[]
+
 type Chickens =
     {
         Size : Row<ChickenId, float>
