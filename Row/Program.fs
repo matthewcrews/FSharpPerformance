@@ -32,13 +32,43 @@ type Benchmarks () =
             [| for i in 1 .. valueCounts[int Size.``1_000``] -> rng.Next maxValue |]
         |]
 
+    let otherArrays =
+        [|
+            [| for i in 1 .. valueCounts[int Size.``1``] -> rng.Next maxValue |]
+            [| for i in 1 .. valueCounts[int Size.``10``] -> rng.Next maxValue |]
+            [| for i in 1 .. valueCounts[int Size.``100``] -> rng.Next maxValue |]
+            [| for i in 1 .. valueCounts[int Size.``1_000``] -> rng.Next maxValue |]
+        |]
+
     let rows =
         arrays
+        |> Array.map Row<ChickenId, _>
+
+    let otherRows =
+        otherArrays
         |> Array.map Row<ChickenId, _>
 
 
     [<Params(Size.``1``, Size.``10``, Size.``100``, Size.``1_000``)>]
     member val Size = Size.``1`` with get, set
+
+    [<Benchmark>]
+    member b.RowMap2 () =
+        let a = rows[int b.Size]
+        let other = otherRows[int b.Size]
+
+        (a, other)
+        ||> Row.map2 (fun aValue otherValue -> aValue + otherValue)
+
+
+    [<Benchmark>]
+    member b.ArrayMap2 () =
+        let a = arrays[int b.Size]
+        let other = otherArrays[int b.Size]
+
+        (a, other)
+        ||> Array.map2 (fun aValue otherValue -> aValue + otherValue)
+
 
     // [<Benchmark>]
     // member b.ArraySum () =
@@ -114,17 +144,17 @@ type Benchmarks () =
     //     r
     //     |> Row.map (fun v -> v * 2)
 
-    [<Benchmark>]
-    member b.ArrayMapi () =
-        let a = arrays[int b.Size]
-        a
-        |> Array.mapi (fun i v -> v + (int i))
+    // [<Benchmark>]
+    // member b.ArrayMapi () =
+    //     let a = arrays[int b.Size]
+    //     a
+    //     |> Array.mapi (fun i v -> v + (int i))
 
-    [<Benchmark>]
-    member b.RowMapi () =
-        let r = rows[int b.Size]
-        r
-        |> Row.mapi (fun i v -> v + (int i))
+    // [<Benchmark>]
+    // member b.RowMapi () =
+    //     let r = rows[int b.Size]
+    //     r
+    //     |> Row.mapi (fun i v -> v + (int i))
 
 // let x = 
 //     [|1 .. 10|]

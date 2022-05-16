@@ -1,12 +1,11 @@
-﻿module rec TopologicalSort.Row
+﻿module rec Row
 
-open System
 open System.Collections
 open System.Collections.Generic
-open System.Diagnostics.SymbolStore
 
 module private Helpers =
-    
+
+
     let checkInputSeq (values: (int<'Measure> * 'T) seq) =
         let sortedValues =
             values
@@ -31,6 +30,8 @@ module private Helpers =
 
 
 type Row<[<Measure>] 'Measure, 'T>(values: array<'T>) =
+    do if isNull values then
+        raise (new System.ArgumentNullException(nameof values)) 
 
     new (length: int<'Measure>, value: 'T) =
         Row (Array.create (int length) value)
@@ -43,16 +44,20 @@ type Row<[<Measure>] 'Measure, 'T>(values: array<'T>) =
         let newValues = Helpers.checkInputSeq values
         Row<'Measure, 'T> newValues
         
-    member _.Values : 'T array = Array.copy values
+        
+    member _.Values : 'T array = values
 
-    member _.Item
-        with get (i: int<'Measure>) =
-            values[int i]
+    member r.Item
+        with inline get (i: int<'Measure>) =
+            r.Values[int i]
 
-        and set (index: int<'Measure>) value =
-            values[int index] <- value
+        and inline set (index: int<'Measure>) value =
+            r.Values[int index] <- value
 
     member _.Length = LanguagePrimitives.Int32WithMeasure<'Measure> values.Length
+
+    member _.AsReadOnlyRow () =
+        ReadOnlyRow<'Measure, _> values
 
     override row.ToString () =
         $"Row %A{row.Values}"
@@ -76,58 +81,121 @@ type Row<[<Measure>] 'Measure, 'T>(values: array<'T>) =
             member r.GetEnumerator () : IEnumerator =
                 (r :> IEnumerable<_>).GetEnumerator() :> IEnumerator
 
+
 module Row =
-    
+
     let inline create (count: int<'Measure>) value =
         let values = Array.create (int count) value
         Row<'Measure, _> values
     
+
+    let inline sum (row: Row<'Measure, 'T>) =
+        let mutable acc = LanguagePrimitives.GenericZero<'T>
+        let array = row.Values
+        for i = 0 to array.Length - 1 do
+            acc <- acc + array[i]
+
+        acc
+
+
+    let inline sumBy ([<InlineIfLambda>] f) (row: Row<_,_>) =
+        let mutable acc = LanguagePrimitives.GenericZero<'T>
+        let array = row.Values
+        for i = 0 to array.Length - 1 do
+            acc <- acc + (f array[i])
+
+        acc
+    
+
     let inline iter ([<InlineIfLambda>] f) (row: Row<_,_>) =
-        row.Values
-        |> Array.iter f
-        
+        let array = row.Values
+        for i = 0 to array.Length - 1 do
+            f array[i]
+  
+            
     let inline iteri ([<InlineIfLambda>] f: int<'Measure> -> 'a -> unit) (row: Row<'Measure, _>) =
-        row.Values
-        |> Array.iteri (fun i v ->
+        let array = row.Values
+        for i = 0 to array.Length - 1 do
             let i = LanguagePrimitives.Int32WithMeasure<'Measure> i
-            f i v)
+            f i array[int i]
         
+
     let inline iteri2 ([<InlineIfLambda>] f: int<'Measure> -> 'a -> 'b -> unit) (a: Row<'Measure, 'a>) (b: Row<'Measure, 'b>) =
         (a.Values, b.Values)
         ||> Array.iteri2 (fun i aValue bValue ->
             let i = LanguagePrimitives.Int32WithMeasure<'Measure> i
             f i aValue bValue)
         
+
     let inline map ([<InlineIfLambda>] f) (row: Row<'Measure, _>) =
-        row.Values
-        |> Array.map f
-        |> Row<'Measure, _>
+        let array = row.Values
+        let res = Array.zeroCreate array.Length
+
+        for i = 0 to array.Length - 1 do
+            res[i] <- f array[i]
+        
+        Row<'Measure, _> res
+
         
     let inline mapi ([<InlineIfLambda>] f: int<'Measure> -> 'a -> 'b) (row: Row<'Measure, _>) =
-        row.Values
-        |> Array.mapi (fun i v ->
+        let array = row.Values
+        let res = Array.zeroCreate array.Length
+
+        for i = 0 to array.Length - 1 do
             let i = LanguagePrimitives.Int32WithMeasure<'Measure> i
-            f i v)
-        |> Row<'Measure, _>
+            res[int i] <- f i array[int i]
+        
+        Row<'Measure, _> res
+
         
     let inline max (row: Row<'Measure, _>) =
-        Array.max row.Values
+        let array = row.Values
+        if array.Length = 0 then invalidArg (nameof row) "Row cannot be empty"
+        let mutable acc = array[0]
+        for i = 1 to array.Length - 1 do
+            let curr = array[i]
+            if curr > acc then 
+                acc <- curr
+        acc
         
+
     let inline maxBy ([<InlineIfLambda>] f) (row: Row<'Measure, _>) =
-        row.Values
-        |> Array.maxBy f
+        let array = row.Values
+        if array.Length = 0 then invalidArg (nameof row) "Row cannot be empty"
+        let mutable accv = array[0]
+        let mutable acc = f accv
+        for i = 1 to array.Length - 1 do
+            let currv = array[i]
+            let curr = f currv
+            if curr > acc then
+                acc <- curr
+                accv <- currv
+        accv
         
+
     let inline min (row: Row<'Measure, _>) =
-        Array.min row.Values
+        let array = row.Values
+        if array.Length = 0 then invalidArg (nameof row) "Row cannot be empty"
+        let mutable acc = array[0]
+        for i = 1 to array.Length - 1 do
+            let curr = array[i]
+            if curr < acc then 
+                acc <- curr
+        acc
         
+
     let inline minBy ([<InlineIfLambda>] f) (row: Row<'Measure, _>) =
-        row.Values
-        |> Array.minBy f
-        
-    let inline scale a (row: Row<'Measure, _>) =
-        row.Values
-        |> Array.map (fun elem -> a * elem)
-        |> Row<'Measure, _>
+        let array = row.Values
+        if array.Length = 0 then invalidArg (nameof row) "Row cannot be empty"
+        let mutable accv = array[0]
+        let mutable acc = f accv
+        for i = 1 to array.Length - 1 do
+            let currv = array[i]
+            let curr = f currv
+            if curr < acc then
+                acc <- curr
+                accv <- currv
+        accv
         
         
     module InPlace =
@@ -136,18 +204,19 @@ module Row =
             
             for i = 0 to target.Values.Length - 1 do
                 target.Values[i] <- target.Values[i] + source.Values[i]
+            
 
 
 type ReadOnlyRow<[<Measure>] 'Measure, 'T>(values: array<'T>) =
+    do if isNull values then
+        raise (new System.ArgumentNullException(nameof values)) 
 
     new (values: (int<'Measure> * 'T) seq) =
         let newValues = Helpers.checkInputSeq values
         ReadOnlyRow<'Measure, 'T> newValues
     
     new (row: Row<'Measure, 'T>) =
-        let newValues =
-            row.Values
-            |> Array.copy
+        let newValues = Array.copy row.Values
         ReadOnlyRow<'Measure, 'T> newValues
     
     member _.Values = values
@@ -183,38 +252,115 @@ type ReadOnlyRow<[<Measure>] 'Measure, 'T>(values: array<'T>) =
 
 module ReadOnlyRow =
     
+    let inline create (count: int<'Measure>) value =
+        let values = Array.create (int count) value
+        ReadOnlyRow<'Measure, _> values
+    
+
+    let inline sum (row: ReadOnlyRow<'Measure, 'T>) =
+        let mutable acc = LanguagePrimitives.GenericZero<'T>
+        let array = row.Values
+        for i = 0 to array.Length - 1 do
+            acc <- acc + array[i]
+
+        acc
+
+
+    let inline sumBy ([<InlineIfLambda>] f) (row: ReadOnlyRow<_,_>) =
+        let mutable acc = LanguagePrimitives.GenericZero<'T>
+        let array = row.Values
+        for i = 0 to array.Length - 1 do
+            acc <- acc + (f array[i])
+
+        acc
+    
+        
     let inline iter ([<InlineIfLambda>] f) (row: ReadOnlyRow<_,_>) =
-        row.Values
-        |> Array.iter f
-        
+        let array = row.Values
+        for i = 0 to array.Length - 1 do
+            f array[i]
+  
+            
     let inline iteri ([<InlineIfLambda>] f: int<'Measure> -> 'a -> unit) (row: ReadOnlyRow<'Measure, _>) =
-        row.Values
-        |> Array.iteri (fun i v ->
+        let array = row.Values
+        for i = 0 to array.Length - 1 do
             let i = LanguagePrimitives.Int32WithMeasure<'Measure> i
-            f i v)
+            f i array[int i]
         
+
+    let inline iteri2 ([<InlineIfLambda>] f: int<'Measure> -> 'a -> 'b -> unit) (a: ReadOnlyRow<'Measure, 'a>) (b: ReadOnlyRow<'Measure, 'b>) =
+        (a.Values, b.Values)
+        ||> Array.iteri2 (fun i aValue bValue ->
+            let i = LanguagePrimitives.Int32WithMeasure<'Measure> i
+            f i aValue bValue)
+        
+
     let inline map ([<InlineIfLambda>] f) (row: ReadOnlyRow<'Measure, _>) =
-        row.Values
-        |> Array.map f
-        |> ReadOnlyRow<'Measure, _>
+        let array = row.Values
+        let res = Array.zeroCreate array.Length
+
+        for i = 0 to array.Length - 1 do
+            res[i] <- f array[i]
+        
+        Row<'Measure, _> res
+
         
     let inline mapi ([<InlineIfLambda>] f: int<'Measure> -> 'a -> 'b) (row: ReadOnlyRow<'Measure, _>) =
-        row.Values
-        |> Array.mapi (fun i v ->
+        let array = row.Values
+        let res = Array.zeroCreate array.Length
+
+        for i = 0 to array.Length - 1 do
             let i = LanguagePrimitives.Int32WithMeasure<'Measure> i
-            f i v)
-        |> ReadOnlyRow<'Measure, _>
+            res[int i] <- f i array[int i]
+        
+        Row<'Measure, _> res
+
         
     let inline max (row: ReadOnlyRow<'Measure, _>) =
-        Array.max row.Values
+        let array = row.Values
+        if array.Length = 0 then invalidArg (nameof row) "Row cannot be empty"
+        let mutable acc = array[0]
+        for i = 1 to array.Length - 1 do
+            let curr = array[i]
+            if curr > acc then 
+                acc <- curr
+        acc
         
+
     let inline maxBy ([<InlineIfLambda>] f) (row: ReadOnlyRow<'Measure, _>) =
-        row.Values
-        |> Array.maxBy f
+        let array = row.Values
+        if array.Length = 0 then invalidArg (nameof row) "Row cannot be empty"
+        let mutable accv = array[0]
+        let mutable acc = f accv
+        for i = 1 to array.Length - 1 do
+            let currv = array.[i]
+            let curr = f currv
+            if curr > acc then
+                acc <- curr
+                accv <- currv
+        accv
         
+
     let inline min (row: ReadOnlyRow<'Measure, _>) =
-        Array.min row.Values
+        let array = row.Values
+        if array.Length = 0 then invalidArg (nameof row) "Row cannot be empty"
+        let mutable acc = array[0]
+        for i = 1 to array.Length - 1 do
+            let curr = array[i]
+            if curr < acc then 
+                acc <- curr
+        acc
         
+
     let inline minBy ([<InlineIfLambda>] f) (row: ReadOnlyRow<'Measure, _>) =
-        row.Values
-        |> Array.minBy f
+        let array = row.Values
+        if array.Length = 0 then invalidArg (nameof row) "Row cannot be empty"
+        let mutable accv = array[0]
+        let mutable acc = f accv
+        for i = 1 to array.Length - 1 do
+            let currv = array.[i]
+            let curr = f currv
+            if curr < acc then
+                acc <- curr
+                accv <- currv
+        accv

@@ -1,5 +1,11 @@
 ﻿module TopologicalSort.Version3
 
+(*
+Version 3:
+Instead of storing the Sources and Targets in a Map, we use a ReadOnlyDictionary
+for faster lookup
+*)
+
 open System.Collections.Generic
 open System.Collections.ObjectModel
 

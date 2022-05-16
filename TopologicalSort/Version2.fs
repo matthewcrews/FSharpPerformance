@@ -1,5 +1,11 @@
 ﻿module TopologicalSort.Version2
 
+(*
+Version 2:
+In this updated version we are using a HashSet instead of a Set to keep track
+of which Edges are still in the Graph
+*)
+
 open System.Collections.Generic
 
 

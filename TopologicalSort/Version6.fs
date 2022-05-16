@@ -1,7 +1,15 @@
 ﻿module TopologicalSort.Version6
 
+(*
+Version 6:
+Here we use the idea of Pooling resources so that we don't
+have to allocation collections each time we want to perform
+a sort. This reduces the overall runtime if sort is called
+frequently.
+*)
+
 open System.Collections.Generic
-open TopologicalSort.Row
+open Row
 
 
 [<Measure>] type Node

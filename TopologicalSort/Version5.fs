@@ -1,7 +1,15 @@
 ﻿module TopologicalSort.Version5
 
+(*
+Version 5:
+We move away from using the F# list and instead use array.
+This improves our performance due to data locality. We also
+use a .NET Queue instead of List for tracking the order of
+the nodes and a Stack to track which nodes to process next.
+*)
+
 open System.Collections.Generic
-open TopologicalSort.Row
+open Row
 
 
 [<Measure>] type Node

@@ -1,5 +1,13 @@
 ﻿module TopologicalSort.Version4
 
+(*
+Version 4:
+The default comparison built into F# can be slow when compared
+to the performance of using raw primitives. Instead of using
+Records to model our domain, we use primitve types that have
+been annotated with Units of Measure
+*)
+
 open System.Collections.Generic
 open System.Collections.ObjectModel
 

@@ -1,5 +1,11 @@
 module TopologicalSort.Version1
 
+(*
+Version 1:
+This is a naive first approach to writing Kahn's algorithm using 
+functional programming style and immutability
+*)
+
 type Node =
     {
         Name : string

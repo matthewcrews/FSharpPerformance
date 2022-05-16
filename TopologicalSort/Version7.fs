@@ -1,9 +1,15 @@
 ﻿module TopologicalSort.Version7
 
+(*
+Version 7:
+Instead of a HashSet for tracking the remaining Edges, we use
+a custom BitSetTracker. BitSetTracker is faster because indexing
+into an array is faster than a HashSet contains check even though
+both of a complexity of O(1)
+*)
+
 open System.Collections.Generic
-open TopologicalSort.Row
-
-
+open Row
 
 
 [<Measure>] type Node
