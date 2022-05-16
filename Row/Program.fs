@@ -70,16 +70,16 @@ type Benchmarks () =
         |> Row.sum
 
     [<Benchmark>]
-    member b.RowIteri () =
-        let a = rows[int b.Size]
-        a
-        |> Row.iteri (fun i v -> a[i] <- 1 + v)
-
-    [<Benchmark>]
     member b.ArrayIteri () =
         let a = arrays[int b.Size]
         a
         |> Array.iteri (fun i v -> a[i] <- 1 + v)
+
+    [<Benchmark>]
+    member b.RowIteri () =
+        let a = rows[int b.Size]
+        a
+        |> Row.iteri (fun i v -> a[i] <- 1 + v)
 
     [<Benchmark>]
     member b.ArrayMin () =
