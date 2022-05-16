@@ -125,14 +125,6 @@ module Row =
         let array = row.Values
         for i = 0 to array.Length - 1 do
             f array[i]
-  
-            
-    [<CompiledName("IterateIndexed")>]
-    let inline iteri ([<InlineIfLambda>] f: int<'Measure> -> 'a -> unit) (row: Row<'Measure, _>) =
-        let array = row.Values
-        for i = 0 to array.Length - 1 do
-            let i = LanguagePrimitives.Int32WithMeasure<'Measure> i
-            f i array[int i]
        
        
     [<CompiledName("Iterate2")>]
@@ -144,6 +136,14 @@ module Row =
 
         for i = 0 to array1.Length - 1 do
             f array1[i] array2[i]
+  
+            
+    [<CompiledName("IterateIndexed")>]
+    let inline iteri ([<InlineIfLambda>] f: int<'Measure> -> 'a -> unit) (row: Row<'Measure, _>) =
+        let array = row.Values
+        for i = 0 to array.Length - 1 do
+            let i = LanguagePrimitives.Int32WithMeasure<'Measure> i
+            f i array[int i]
 
     
     [<CompiledName("IterateIndexed2")>]
@@ -266,16 +266,6 @@ module Row =
                 acc <- curr
                 accv <- currv
         accv
-        
-        
-    module InPlace =
-                
-        [<CompiledName("Add")>]
-        let inline add (source: Row<'Measure, _>) (target: Row<'Measure, _>) =
-            
-            for i = 0 to target.Values.Length - 1 do
-                target.Values[i] <- target.Values[i] + source.Values[i]
-            
 
 
 type ReadOnlyRow<[<Measure>] 'Measure, 'T>(values: array<'T>) =
@@ -297,6 +287,7 @@ type ReadOnlyRow<[<Measure>] 'Measure, 'T>(values: array<'T>) =
         with get (i: int<'Measure>) =
             values[int i]
 
+    
     member _.Length = LanguagePrimitives.Int32WithMeasure<'Measure> values.Length
 
 
@@ -357,6 +348,17 @@ module ReadOnlyRow =
         for i = 0 to array.Length - 1 do
             f array[i]
   
+    
+    [<CompiledName("Iterate2")>]
+    let inline iter2 ([<InlineIfLambda>] f: 'a -> 'b -> unit) (a: ReadOnlyRow<'Measure, 'a>) (b: ReadOnlyRow<'Measure, 'b>) =
+        let array1 = a.Values
+        let array2 = b.Values
+        if array1.Length <> array2.Length then
+            raise (invalidArg (nameof a) "Cannot iterate through arrays of different lengths")
+
+        for i = 0 to array1.Length - 1 do
+            f array1[i] array2[i]
+          
             
     [<CompiledName("IterateIndexed")>]
     let inline iteri ([<InlineIfLambda>] f: int<'Measure> -> 'a -> unit) (row: ReadOnlyRow<'Measure, _>) =
