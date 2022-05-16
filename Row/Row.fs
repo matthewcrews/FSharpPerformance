@@ -28,6 +28,10 @@ module private Helpers =
         newValues
 
 
+    let inline zeroCreateUnchecked (count:int) =
+        (# "newarr !0" type ('T) count : 'T array #)
+
+
     let inline invalidArgDifferentRowLength rowAName lengthA rowBName lengthB =
         $"{rowAName}.Length = {lengthA}, {rowBName}.Length = {lengthB}"
 
@@ -160,9 +164,9 @@ module Row =
 
 
     [<CompiledName("Map")>]
-    let inline map ([<InlineIfLambda>] f) (row: Row<'Measure, _>) =
+    let inline map ([<InlineIfLambda>] f: 'a -> 'b) (row: Row<'Measure, 'a>) =
         let array = row.Values
-        let res = Array.zeroCreate array.Length
+        let res : 'b[] = Helpers.zeroCreateUnchecked array.Length
 
         for i = 0 to array.Length - 1 do
             res[i] <- f array[i]
@@ -178,7 +182,7 @@ module Row =
             let msg = Helpers.invalidArgDifferentRowLength (nameof a) a.Length (nameof b) b.Length
             raise (invalidArg (nameof a) msg)
 
-        let res = Array.zeroCreate array1.Length
+        let res : 'c[] = Helpers.zeroCreateUnchecked array1.Length
 
         for i = 0 to array1.Length - 1 do
             res[i] <- f array1[i] array2[i]
@@ -189,7 +193,7 @@ module Row =
     [<CompiledName("MapIndexed")>]
     let inline mapi ([<InlineIfLambda>] f: int<'Measure> -> 'a -> 'b) (row: Row<'Measure, _>) =
         let array = row.Values
-        let res = Array.zeroCreate array.Length
+        let res : 'b[] = Helpers.zeroCreateUnchecked array.Length
 
         for i = 0 to array.Length - 1 do
             let i = LanguagePrimitives.Int32WithMeasure<'Measure> i
@@ -206,7 +210,7 @@ module Row =
             let msg = Helpers.invalidArgDifferentRowLength (nameof a) a.Length (nameof b) b.Length
             raise (invalidArg (nameof a) msg)
 
-        let res = Array.zeroCreate array1.Length
+        let res : 'c[] = Helpers.zeroCreateUnchecked array1.Length
 
         for i = 0 to array1.Length - 1 do
             let i = LanguagePrimitives.Int32WithMeasure<'Measure> i
