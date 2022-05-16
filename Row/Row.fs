@@ -227,7 +227,7 @@ module Row =
         acc
         
 
-    [<CompiledName("MayBy")>]
+    [<CompiledName("MaxBy")>]
     let inline maxBy ([<InlineIfLambda>] f) (row: Row<'Measure, _>) =
         let array = row.Values
         if array.Length = 0 then invalidArg (nameof row) "Row cannot be empty"

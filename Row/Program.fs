@@ -46,10 +46,12 @@ type Benchmarks () =
 
     let rows =
         arrays
+        |> Array.copy
         |> Array.map Row<ChickenId, _>
 
     let otherRows =
         otherArrays
+        |> Array.copy
         |> Array.map Row<ChickenId, _>
 
 
