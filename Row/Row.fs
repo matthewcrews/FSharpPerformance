@@ -162,11 +162,12 @@ module Row =
     [<CompiledName("Map")>]
     let inline map ([<InlineIfLambda>] f) (row: Row<'Measure, _>) =
         let array = row.Values
-        let res = Array.zeroCreate array.Length
+        let res = System.GC.AllocateUninitializedArray (array.Length, false)
 
         for i = 0 to array.Length - 1 do
             res[i] <- f array[i]
         
+//        res
         Row<'Measure, _> res
 
 
@@ -178,7 +179,7 @@ module Row =
             let msg = Helpers.invalidArgDifferentRowLength (nameof a) a.Length (nameof b) b.Length
             raise (invalidArg (nameof a) msg)
 
-        let res = Array.zeroCreate array1.Length
+        let res = System.GC.AllocateUninitializedArray (array1.Length, false)
 
         for i = 0 to array1.Length - 1 do
             res[i] <- f array1[i] array2[i]
@@ -189,7 +190,7 @@ module Row =
     [<CompiledName("MapIndexed")>]
     let inline mapi ([<InlineIfLambda>] f: int<'Measure> -> 'a -> 'b) (row: Row<'Measure, _>) =
         let array = row.Values
-        let res = Array.zeroCreate array.Length
+        let res = System.GC.AllocateUninitializedArray (array.Length, false)
 
         for i = 0 to array.Length - 1 do
             let i = LanguagePrimitives.Int32WithMeasure<'Measure> i
@@ -206,7 +207,7 @@ module Row =
             let msg = Helpers.invalidArgDifferentRowLength (nameof a) a.Length (nameof b) b.Length
             raise (invalidArg (nameof a) msg)
 
-        let res = Array.zeroCreate array1.Length
+        let res = System.GC.AllocateUninitializedArray (array1.Length, false)
 
         for i = 0 to array1.Length - 1 do
             let i = LanguagePrimitives.Int32WithMeasure<'Measure> i
@@ -384,7 +385,7 @@ module ReadOnlyRow =
     [<CompiledName("Map")>]
     let inline map ([<InlineIfLambda>] f) (row: ReadOnlyRow<'Measure, _>) =
         let array = row.Values
-        let res = Array.zeroCreate array.Length
+        let res = System.GC.AllocateUninitializedArray (array.Length, false)
 
         for i = 0 to array.Length - 1 do
             res[i] <- f array[i]
@@ -400,7 +401,7 @@ module ReadOnlyRow =
             let msg = Helpers.invalidArgDifferentRowLength (nameof a) a.Length (nameof b) b.Length
             raise (invalidArg (nameof a) msg)
 
-        let res = Array.zeroCreate array1.Length
+        let res = System.GC.AllocateUninitializedArray (array1.Length, false)
 
         for i = 0 to array1.Length - 1 do
             res[i] <- f array1[i] array2[i]
@@ -411,7 +412,7 @@ module ReadOnlyRow =
     [<CompiledName("MapIndexed")>]
     let inline mapi ([<InlineIfLambda>] f: int<'Measure> -> 'a -> 'b) (row: ReadOnlyRow<'Measure, _>) =
         let array = row.Values
-        let res = Array.zeroCreate array.Length
+        let res = System.GC.AllocateUninitializedArray (array.Length, false)
 
         for i = 0 to array.Length - 1 do
             let i = LanguagePrimitives.Int32WithMeasure<'Measure> i
@@ -428,7 +429,7 @@ module ReadOnlyRow =
             let msg = Helpers.invalidArgDifferentRowLength (nameof a) a.Length (nameof b) b.Length
             raise (invalidArg (nameof a) msg)
 
-        let res = Array.zeroCreate array1.Length
+        let res = System.GC.AllocateUninitializedArray (array1.Length, false)
 
         for i = 0 to array1.Length - 1 do
             let i = LanguagePrimitives.Int32WithMeasure<'Measure> i

@@ -55,87 +55,89 @@ type Benchmarks () =
         |> Array.map Row<ChickenId, _>
 
 
-    [<Params(Size.``1``, Size.``10``, Size.``100``, Size.``1_000``, Size.``10_000``)>]
+//    [<Params(Size.``1``, Size.``10``, Size.``100``, Size.``1_000``, Size.``10_000``)>]
+    [<Params(Size.``1``, Size.``10``, Size.``100``)>]
+//    [<Params(Size.``1``, Size.``10``)>]
     member val Size = Size.``1`` with get, set
-
-
-    [<Benchmark>]
-    member b.ArraySum () =
-        let a = arrays[int b.Size]
-        a
-        |> Array.sum
-
-    [<Benchmark>]
-    member b.RowSum () =
-        let a = rows[int b.Size]
-        a
-        |> Row.sum
-
-    [<Benchmark>]
-    member b.ArrayIteri () =
-        let a = arrays[int b.Size]
-        a
-        |> Array.iteri (fun i v -> a[i] <- 1 + v)
-
-    [<Benchmark>]
-    member b.RowIteri () =
-        let a = rows[int b.Size]
-        a
-        |> Row.iteri (fun i v -> a[i] <- 1 + v)
-
-    [<Benchmark>]
-    member b.ArrayMin () =
-        let a = arrays[int b.Size]
-        a
-        |> Array.min
-
-    [<Benchmark>]
-    member b.RowMin () =
-        let a = rows[int b.Size]
-        a
-        |> Row.min
-
-    [<Benchmark>]
-    member b.ArrayMinBy () =
-        let a = arrays[int b.Size]
-        a
-        |> Array.minBy (fun v -> v * 2)
-
-    [<Benchmark>]
-    member b.RowMinBy () =
-        let a = rows[int b.Size]
-        a
-        |> Row.minBy (fun v -> v * 2)
-
-    [<Benchmark>]
-    member b.ArrayIter () =
-        let mutable acc = 0
-        let a = arrays[int b.Size]
-        a
-        |> Array.iter (fun v -> acc <- acc + v)
-
-    [<Benchmark>]
-    member b.RowIter () =
-        let mutable acc = 0
-        let a = rows[int b.Size]
-        a
-        |> Row.iter (fun v -> acc <- acc + v)
-
-    [<Benchmark>]
-    member b.ArrayIteri2 () =
-        let a = arrays[int b.Size]
-        let other = otherArrays[int b.Size]
-
-        (a, other)
-        ||> Array.iteri2 (fun i aValue otherValue -> a[i] <- aValue + otherValue)
-
-    [<Benchmark>]
-    member b.RowIteri2 () =
-        let a = rows[int b.Size]
-        let other = otherRows[int b.Size]
-
-        (a, other)
-        ||> Row.iteri2 (fun i aValue otherValue -> a[i] <- aValue + otherValue)
+//
+//
+//    [<Benchmark>]
+//    member b.ArraySum () =
+//        let a = arrays[int b.Size]
+//        a
+//        |> Array.sum
+//
+//    [<Benchmark>]
+//    member b.RowSum () =
+//        let a = rows[int b.Size]
+//        a
+//        |> Row.sum
+//
+//    [<Benchmark>]
+//    member b.ArrayIteri () =
+//        let a = arrays[int b.Size]
+//        a
+//        |> Array.iteri (fun i v -> a[i] <- 1 + v)
+//
+//    [<Benchmark>]
+//    member b.RowIteri () =
+//        let a = rows[int b.Size]
+//        a
+//        |> Row.iteri (fun i v -> a[i] <- 1 + v)
+//
+//    [<Benchmark>]
+//    member b.ArrayMin () =
+//        let a = arrays[int b.Size]
+//        a
+//        |> Array.min
+//
+//    [<Benchmark>]
+//    member b.RowMin () =
+//        let a = rows[int b.Size]
+//        a
+//        |> Row.min
+//
+//    [<Benchmark>]
+//    member b.ArrayMinBy () =
+//        let a = arrays[int b.Size]
+//        a
+//        |> Array.minBy (fun v -> v * 2)
+//
+//    [<Benchmark>]
+//    member b.RowMinBy () =
+//        let a = rows[int b.Size]
+//        a
+//        |> Row.minBy (fun v -> v * 2)
+//
+//    [<Benchmark>]
+//    member b.ArrayIter () =
+//        let mutable acc = 0
+//        let a = arrays[int b.Size]
+//        a
+//        |> Array.iter (fun v -> acc <- acc + v)
+//
+//    [<Benchmark>]
+//    member b.RowIter () =
+//        let mutable acc = 0
+//        let a = rows[int b.Size]
+//        a
+//        |> Row.iter (fun v -> acc <- acc + v)
+//
+//    [<Benchmark>]
+//    member b.ArrayIteri2 () =
+//        let a = arrays[int b.Size]
+//        let other = otherArrays[int b.Size]
+//
+//        (a, other)
+//        ||> Array.iteri2 (fun i aValue otherValue -> a[i] <- aValue + otherValue)
+//
+//    [<Benchmark>]
+//    member b.RowIteri2 () =
+//        let a = rows[int b.Size]
+//        let other = otherRows[int b.Size]
+//
+//        (a, other)
+//        ||> Row.iteri2 (fun i aValue otherValue -> a[i] <- aValue + otherValue)
     
     [<Benchmark>]
     member b.ArrayMap () =
