@@ -28,8 +28,7 @@ module private Helpers =
         newValues
 
 
-    let inline zeroCreateUnchecked (count:int) : 'T[] =
-        (# "newarr !0" type ('T) count : 'T array #)
+    // let inline zeroCreateUnchecked (count:int) : 'T[] = (# "newarr !0" type ('T) count : 'T array #)
 
 
     let inline invalidArgDifferentRowLength rowAName lengthA rowBName lengthB =
@@ -163,60 +162,67 @@ module Row =
             f i array1[int i] array2[int i]
 
 
+    let inline zeroCreateUnchecked (count: int) : 'T array =
+        (# "newarr !0" type ('T) count : 'T array #)
+
     [<CompiledName("Map")>]
     let inline map ([<InlineIfLambda>] f: 'a -> 'b) (row: Row<'Measure, 'a>) =
         let array = row.Values
-        let res : 'b[] = Helpers.zeroCreateUnchecked array.Length
+        let res = zeroCreateUnchecked array.Length
 
         for i = 0 to array.Length - 1 do
             res[i] <- f array[i]
         
         Row<'Measure, _> res
 
+        // row.Values
+        // |> Array.map f
+        // |> Row<'Measure, _>
 
-    [<CompiledName("Map2")>]
-    let inline map2 ([<InlineIfLambda>] f: 'a -> 'b -> 'c) (a: Row<'Measure, 'a>) (b: Row<'Measure, 'b>) =
-        let array1 = a.Values
-        let array2 = b.Values
-        if array1.Length <> array2.Length then
-            let msg = Helpers.invalidArgDifferentRowLength (nameof a) a.Length (nameof b) b.Length
-            raise (invalidArg (nameof a) msg)
 
-        let res : 'c[] = Helpers.zeroCreateUnchecked array1.Length
+    // [<CompiledName("Map2")>]
+    // let inline map2 ([<InlineIfLambda>] f: 'a -> 'b -> 'c) (a: Row<'Measure, 'a>) (b: Row<'Measure, 'b>) =
+    //     let array1 = a.Values
+    //     let array2 = b.Values
+    //     if array1.Length <> array2.Length then
+    //         let msg = Helpers.invalidArgDifferentRowLength (nameof a) a.Length (nameof b) b.Length
+    //         raise (invalidArg (nameof a) msg)
 
-        for i = 0 to array1.Length - 1 do
-            res[i] <- f array1[i] array2[i]
+    //     let res : 'c[] = Helpers.zeroCreateUnchecked array1.Length
 
-        Row<'Measure, _> res
+    //     for i = 0 to array1.Length - 1 do
+    //         res[i] <- f array1[i] array2[i]
+
+    //     Row<'Measure, _> res
 
             
-    [<CompiledName("MapIndexed")>]
-    let inline mapi ([<InlineIfLambda>] f: int<'Measure> -> 'a -> 'b) (row: Row<'Measure, _>) =
-        let array = row.Values
-        let res : 'b[] = Helpers.zeroCreateUnchecked array.Length
+    // [<CompiledName("MapIndexed")>]
+    // let inline mapi ([<InlineIfLambda>] f: int<'Measure> -> 'a -> 'b) (row: Row<'Measure, _>) =
+    //     let array = row.Values
+    //     let res : 'b[] = Helpers.zeroCreateUnchecked array.Length
 
-        for i = 0 to array.Length - 1 do
-            let i = LanguagePrimitives.Int32WithMeasure<'Measure> i
-            res[int i] <- f i array[int i]
+    //     for i = 0 to array.Length - 1 do
+    //         let i = LanguagePrimitives.Int32WithMeasure<'Measure> i
+    //         res[int i] <- f i array[int i]
         
-        Row<'Measure, _> res
+    //     Row<'Measure, _> res
 
 
-    [<CompiledName("MapIndexed2")>]
-    let inline mapi2 ([<InlineIfLambda>] f: int<'Measure> -> 'a -> 'b -> 'c) (a: Row<'Measure, 'a>) (b: Row<'Measure, 'b>) =
-        let array1 = a.Values
-        let array2 = b.Values
-        if array1.Length <> array2.Length then
-            let msg = Helpers.invalidArgDifferentRowLength (nameof a) a.Length (nameof b) b.Length
-            raise (invalidArg (nameof a) msg)
+    // [<CompiledName("MapIndexed2")>]
+    // let inline mapi2 ([<InlineIfLambda>] f: int<'Measure> -> 'a -> 'b -> 'c) (a: Row<'Measure, 'a>) (b: Row<'Measure, 'b>) =
+    //     let array1 = a.Values
+    //     let array2 = b.Values
+    //     if array1.Length <> array2.Length then
+    //         let msg = Helpers.invalidArgDifferentRowLength (nameof a) a.Length (nameof b) b.Length
+    //         raise (invalidArg (nameof a) msg)
 
-        let res : 'c[] = Helpers.zeroCreateUnchecked array1.Length
+    //     let res : 'c[] = Helpers.zeroCreateUnchecked array1.Length
 
-        for i = 0 to array1.Length - 1 do
-            let i = LanguagePrimitives.Int32WithMeasure<'Measure> i
-            res[int i] <- f i array1[int i] array2[int i]
+    //     for i = 0 to array1.Length - 1 do
+    //         let i = LanguagePrimitives.Int32WithMeasure<'Measure> i
+    //         res[int i] <- f i array1[int i] array2[int i]
 
-        Row<'Measure, _> res
+        // Row<'Measure, _> res
 
         
     [<CompiledName("Max")>]

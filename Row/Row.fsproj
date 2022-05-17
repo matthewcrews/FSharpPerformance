@@ -3,6 +3,7 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net6.0</TargetFramework>
     <Platform>x64</Platform>
+    <OtherOptions>$(OtherOptions) --compiling-fslib</OtherOptions> 
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Row.fs" />
