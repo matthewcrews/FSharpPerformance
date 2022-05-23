@@ -54,6 +54,13 @@ module Bar =
         |> Helpers.checkInputSeq
         |> Bar<'Measure, 'T>
     
+    [<CompiledName("Iterate")>]
+    let inline iter ([<InlineIfLambda>] f: 'a -> unit) (row: Bar<'Measure, _>) =
+        let array = row._Values
+        for i = 0 to array.Length - 1 do
+            let i = LanguagePrimitives.Int32WithMeasure<'Measure> i
+            f array[int i]
+    
     [<CompiledName("IterateIndexed")>]
     let inline iteri ([<InlineIfLambda>] f: int<'Measure> -> 'a -> unit) (row: Bar<'Measure, _>) =
         let array = row._Values

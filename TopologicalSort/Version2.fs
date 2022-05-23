@@ -1,16 +1,10 @@
-﻿module TopologicalSort.Version2
+module TopologicalSort.Version2
 
 (*
-Version 2:
-Instead of storing the Sources and Targets in a Map, we use a ReadOnlyDictionary
-for faster lookup.
-We also convert to using HashSet instead of a Set to keep track
-of which Edges are still in the Graph.
+Version 1:
+This is a naive first approach to writing Kahn's algorithm using 
+functional programming style and immutability
 *)
-
-open System.Collections.Generic
-open System.Collections.ObjectModel
-
 
 type Node =
     {
@@ -23,67 +17,65 @@ type Edge =
         Target : Node
     }
 
+type Sources = Map<Node, Edge list>
+type Targets = Map<Node, Edge list>
 
-type Graph = Graph of Edge list
-
-module Graph =
+type Graph = {
+    Sources : Sources
+    Targets : Targets
+}
     
-    let private getDistinctNodes (Graph edges) =
+module Graph =
 
-        let distinctNodes = HashSet()
+    let private createSourcesAndTargets (edges: Edge list) =
         
-        for edge in edges do
-            distinctNodes.Add edge.Source |> ignore
-            distinctNodes.Add edge.Target |> ignore
-            
-        distinctNodes    
-
-    let private createSourcesAndTargets (Graph edges) =
-        
-        let rec loop (edges: Edge list) (sources: Dictionary<_,_>) (targets: Dictionary<_,_>) =
+        let rec loop (edges: Edge list) (sources: Sources) (targets: Targets) =
             match edges with
             | edge::remaining ->
                 let newNodeSources =
-                    match sources.TryGetValue edge.Target with
-                    | true, sourceNodes -> edge :: sourceNodes
-                    | false, _ -> [edge]
-                sources[edge.Target] <- newNodeSources
+                    match sources.TryFind edge.Target with
+                    | Some sourceNodes -> edge :: sourceNodes
+                    | None -> [edge]
+                let sources = sources.Add (edge.Target, newNodeSources)
                 
                 let newNodeTargets =
-                    match targets.TryGetValue edge.Source with
-                    | true, targetNodes -> edge :: targetNodes
-                    | false, _ -> [edge]
-                targets[edge.Source] <- newNodeTargets
+                    match targets.TryFind edge.Source with
+                    | Some targetNodes -> edge :: targetNodes
+                    | None -> [edge]
+                let targets = targets.Add (edge.Source, newNodeTargets)
                 
                 loop remaining sources targets
                 
-            | [] -> ReadOnlyDictionary sources, ReadOnlyDictionary targets
+            | [] -> sources, targets
             
-        let sources = Dictionary()
-        let targets = Dictionary()
-            
-        loop edges sources targets
+        loop edges Map.empty Map.empty
     
 
-    let decompose (graph: Graph) =
-        let nodes = getDistinctNodes graph
-        let sources, targets = createSourcesAndTargets graph
-        let sourceNodes =
-            nodes
-            |> Seq.filter (sources.ContainsKey >> not)
-            |> List.ofSeq
-
-        sourceNodes, sources, targets
-
-
-type Sources = ReadOnlyDictionary<Node, Edge list>
-type Targets = ReadOnlyDictionary<Node, Edge list>
+    let create (edges: Edge list) =
+        let sources, targets = createSourcesAndTargets edges
+        {
+            Sources = sources
+            Targets = targets
+        }
 
 
 let sort (graph: Graph) =
         
-    let processEdge (sources: Sources) (remainingEdges: Edge HashSet, toProcess: Node list) (edge: Edge) =
-        remainingEdges.Remove edge |> ignore
+    let createInitialEdgeSet (graph: Graph) =
+        let edges =
+            graph.Targets.Values
+            |> Seq.collect id
+            
+        (edges, Set.empty)
+        ||> Seq.foldBack Set.add
+    
+    let createInitialSourceNodes (graph: Graph) =
+        graph.Targets.Keys
+        |> Seq.filter (graph.Sources.ContainsKey >> not)
+        |> List.ofSeq
+    
+    let processEdge (sources: Sources) (remainingEdges: Edge Set, toProcess: Node list) (edge: Edge) =
+        let remainingEdges = remainingEdges.Remove edge
         let noRemainingSources =
             sources[edge.Target]
             |> List.forall (remainingEdges.Contains >> not)
@@ -95,17 +87,17 @@ let sort (graph: Graph) =
             remainingEdges, toProcess
     
     
-    let rec loop (sources: Sources) (targets: Targets)  (remainingEdges: Edge HashSet) (toProcess: Node list) (sortedNodes: Node list) =
+    let rec loop (sources: Sources) (targets: Targets) (remainingEdges: Edge Set) (toProcess: Node list) (sortedNodes: Node list) =
         match toProcess with
         | nextNode::toProcess ->
             
-            match targets.TryGetValue nextNode with
-            | true, nodeTargets ->
+            match targets.TryFind nextNode with
+            | Some nodeTargets ->
                 let remainingEdges, toProcess =
                     ((remainingEdges, toProcess), nodeTargets)
                     ||> List.fold (processEdge sources)
                 loop sources targets remainingEdges toProcess (nextNode :: sortedNodes)
-            | false, _ ->
+            | None ->
                 loop sources targets remainingEdges toProcess (nextNode :: sortedNodes)
                     
         | [] ->
@@ -115,7 +107,6 @@ let sort (graph: Graph) =
                 // Items have been stored in reverse order
                 Some (List.rev sortedNodes)
 
-    let (Graph edges) = graph
-    let remainingEdges = HashSet edges
-    let sourceNodes, sources, targets = Graph.decompose graph
-    loop sources targets remainingEdges sourceNodes []
+    let remainingEdges = createInitialEdgeSet graph
+    let sourceNodes = createInitialSourceNodes graph
+    loop graph.Sources graph.Targets remainingEdges sourceNodes []

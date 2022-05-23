@@ -1,22 +1,22 @@
-﻿module TopologicalSort.Version5
+﻿module TopologicalSort.Version6
 
 (*
-Version 5:
-We move away from using the F# list and instead use Row/Bar/Array.
-This improves our performance due to data locality. We also
-use a .NET Queue instead of List for tracking the order of
-the nodes and a Stack to track which nodes to process next.
+Version 6:
+Instead of a HashSet for tracking the remaining Edges, we use
+a custom BitSetTracker. BitSetTracker is faster because indexing
+into an array is faster than a HashSet contains check even though
+both of a complexity of O(1)
 *)
 
 open System.Collections.Generic
 open Row
-
 
 [<RequireQualifiedAccess>]
 module private Unit =
 
     [<Measure>] type Node
     [<Measure>] type Edge
+
 
 type Node = int<Unit.Node>
 
@@ -45,6 +45,53 @@ module Edge =
     let getTarget (edge: Edge) =
         int edge
         |> LanguagePrimitives.Int32WithMeasure<Unit.Node>
+        
+
+type EdgeTracker (nodeCount: int) =
+    let bitsRequired = ((nodeCount * nodeCount) + 63) / 64
+    let values = Array.create bitsRequired 0UL
+    
+    // Public for the purposes of inlining
+    member b.NodeCount = nodeCount
+    member b.Values = values
+    
+    member inline b.Add (edge: Edge) =
+        let source = Edge.getSource edge
+        let target = Edge.getTarget edge
+        let location = (int source) * b.NodeCount + (int target)
+        let bucket = location >>> 6
+        let offset = location &&& 0x3F
+        let mask = 1UL <<< offset
+        b.Values[bucket] <- b.Values[bucket] ||| mask
+        
+    member inline b.Remove (edge: Edge) =
+        let source = Edge.getSource edge
+        let target = Edge.getTarget edge
+        let location = (int source) * b.NodeCount + (int target)
+        let bucket = location >>> 6
+        let offset = location &&& 0x3F
+        let mask = 1UL <<< offset
+        b.Values[bucket] <- b.Values[bucket] &&& ~~~mask
+
+    member inline b.Contains (edge: Edge) =
+        let source = Edge.getSource edge
+        let target = Edge.getTarget edge
+        let location = (int source) * b.NodeCount + (int target)
+        let bucket = location >>> 6
+        let offset = location &&& 0x3F
+        ((b.Values[bucket] >>> offset) &&& 1UL) = 1UL
+
+    member b.Clear () =
+        for i = 0 to b.Values.Length - 1 do
+            b.Values[i] <- 0UL
+
+    member b.Count =
+        let mutable count = 0
+        
+        for i = 0 to b.Values.Length - 1 do
+            count <- count + (System.Numerics.BitOperations.PopCount b.Values[i])
+
+        count
 
 
 type Sources = Bar<Unit.Node, Edge[]>
@@ -101,25 +148,21 @@ module Graph =
 
 
 let sort (graph: Graph) =
-    
-    let toProcess = Stack ()
+        
+    let toProcess = Stack<Node> ()
+    let sortedNodes = Queue<Node> ()
+
     graph.Sources
     |> Bar.iteri (fun nodeId edges ->
         if edges.Length = 0 then
             toProcess.Push nodeId)
         
-    let remainingEdges =
-        let x = HashSet ()
-        
-        graph.Targets
-        |> Bar.iter (fun edges ->
-            for edge in edges do
-                x.Add edge |> ignore)
-        
-        x
-        
-        
-    let sortedNodes = Queue ()
+    let remainingEdges = EdgeTracker (int graph.Targets.Length)
+
+    graph.Targets
+    |> Bar.iter (fun edges ->
+        for edge in edges do
+            remainingEdges.Add edge)
     
     while toProcess.Count > 0 do
         let nextNode = toProcess.Pop()
@@ -128,7 +171,7 @@ let sort (graph: Graph) =
         graph.Targets[nextNode]
         |> Array.iter (fun edge ->
             let target = Edge.getTarget edge
-            remainingEdges.Remove edge |> ignore
+            remainingEdges.Remove edge
             
             let noRemainingSources =
                 graph.Sources[target]
