@@ -31,11 +31,11 @@ module private Helpers =
     let inline invalidArgDifferentRowLength rowAName lengthA rowBName lengthB =
         $"{rowAName}.Length = {lengthA}, {rowBName}.Length = {lengthB}"
 
-
+[<Struct>]
 type Row<[<Measure>] 'Measure, 'T>(values: 'T[]) =
     
-    do if isNull values then
-        raise (System.ArgumentNullException(nameof values)) 
+    // do if isNull values then
+    //     raise (System.ArgumentNullException(nameof values)) 
 
 
     new (length: int<'Measure>, value: 'T) =

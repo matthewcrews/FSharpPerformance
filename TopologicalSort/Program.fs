@@ -4,208 +4,154 @@ open TopologicalSort
 open BenchmarkDotNet.Attributes
 open BenchmarkDotNet.Running
 
-module V1Data =
-    
-    open TopologicalSort.Version1
-    
-    let nodes =
+module Data =
+
+    let nodeCount = 20
+    let graphCount = 1_000
+    let rngSeed = 123
+    let randomEdgeCount =
         [|
-            { Name = "0" }
-            { Name = "1" }
-            { Name = "2" }
-            { Name = "3" }
-            { Name = "4" }
-            { Name = "5" }
-        |]
-
-    let edges =
-        [
-            { Source = nodes[0]; Target = nodes[1] }
-            { Source = nodes[0]; Target = nodes[2] }
-            { Source = nodes[1]; Target = nodes[3] }
-            { Source = nodes[1]; Target = nodes[4] }
-            { Source = nodes[2]; Target = nodes[1] }
-            { Source = nodes[2]; Target = nodes[4] }
-            { Source = nodes[3]; Target = nodes[5] }
-            { Source = nodes[4]; Target = nodes[5] }
-        ]
-        
-    let graph = Graph.create edges
-    
-    
-module V2Data =
-    
-    open TopologicalSort.Version2
-    
-    let nodes =
-        [|
-            { Name = "0" }
-            { Name = "1" }
-            { Name = "2" }
-            { Name = "3" }
-            { Name = "4" }
-            { Name = "5" }
-        |]
-
-    let edges =
-        [
-            { Source = nodes[0]; Target = nodes[1] }
-            { Source = nodes[0]; Target = nodes[2] }
-            { Source = nodes[1]; Target = nodes[3] }
-            { Source = nodes[1]; Target = nodes[4] }
-            { Source = nodes[2]; Target = nodes[1] }
-            { Source = nodes[2]; Target = nodes[4] }
-            { Source = nodes[3]; Target = nodes[5] }
-            { Source = nodes[4]; Target = nodes[5] }
-        ]
-        
-    let graph = Graph.create edges
-
-
-module V3Data =
-    
-    open TopologicalSort.Version3
-    
-    let nodes =
-        [|
-            { Name = "0" }
-            { Name = "1" }
-            { Name = "2" }
-            { Name = "3" }
-            { Name = "4" }
-            { Name = "5" }
-        |]
-
-    let edges =
-        [
-            { Source = nodes[0]; Target = nodes[1] }
-            { Source = nodes[0]; Target = nodes[2] }
-            { Source = nodes[1]; Target = nodes[3] }
-            { Source = nodes[1]; Target = nodes[4] }
-            { Source = nodes[2]; Target = nodes[1] }
-            { Source = nodes[2]; Target = nodes[4] }
-            { Source = nodes[3]; Target = nodes[5] }
-            { Source = nodes[4]; Target = nodes[5] }
-        ]
-        
-    let graph = Graph.create edges
-  
-  
-module V4Data =
-    
-    open TopologicalSort.Version4
-
-    let nodes =
-        [|
-            0<Node>
-            1<Node>
-            2<Node>
-            3<Node>
-            4<Node>
-            5<Node>
-        |]
-
-    let edges =
-        [
-            Edge.create nodes[0] nodes[1]
-            Edge.create nodes[0] nodes[2]
-            Edge.create nodes[1] nodes[3]
-            Edge.create nodes[1] nodes[4]
-            Edge.create nodes[2] nodes[1]
-            Edge.create nodes[2] nodes[4]
-            Edge.create nodes[3] nodes[5]
-            Edge.create nodes[4] nodes[5]
-        ]
-        
-    let graph = Graph.create edges  
-
-    
-module V5Data =
-
-    open TopologicalSort.Version5
-
-    let nodes =
-        [|
-            0<Node>
-            1<Node>
-            2<Node>
-            3<Node>
-            4<Node>
-            5<Node>
-        |]
-
-    let edges =
-        [|
-            Edge.create nodes[0] nodes[1]
-            Edge.create nodes[0] nodes[2]
-            Edge.create nodes[1] nodes[3]
-            Edge.create nodes[1] nodes[4]
-            Edge.create nodes[2] nodes[1]
-            Edge.create nodes[2] nodes[4]
-            Edge.create nodes[3] nodes[5]
-            Edge.create nodes[4] nodes[5]
+            1
+            1
+            1
+            1
+            1
+            1
+            2
+            2
+            2
+            3
         |]
         
-    let graph = Graph.create edges 
-    
-    
-module V6Data =
+    module Version1 =
 
-    open TopologicalSort.Version6
-
-    let nodes =
-        [|
-            0<Node>
-            1<Node>
-            2<Node>
-            3<Node>
-            4<Node>
-            5<Node>
-        |]
-
-    let edges =
-        [|
-            Edge.create nodes[0] nodes[1]
-            Edge.create nodes[0] nodes[2]
-            Edge.create nodes[1] nodes[3]
-            Edge.create nodes[1] nodes[4]
-            Edge.create nodes[2] nodes[1]
-            Edge.create nodes[2] nodes[4]
-            Edge.create nodes[3] nodes[5]
-            Edge.create nodes[4] nodes[5]
-        |]
+        open TopologicalSort.Version1
         
-    let graph = Graph.create edges
-    
-    
-module V7Data =
-
-    open TopologicalSort.Version7
-
-    let nodes =
-        [|
-            0<Node>
-            1<Node>
-            2<Node>
-            3<Node>
-            4<Node>
-            5<Node>
-        |]
-
-    let edges =
-        [|
-            Edge.create nodes[0] nodes[1]
-            Edge.create nodes[0] nodes[2]
-            Edge.create nodes[1] nodes[3]
-            Edge.create nodes[1] nodes[4]
-            Edge.create nodes[2] nodes[1]
-            Edge.create nodes[2] nodes[4]
-            Edge.create nodes[3] nodes[5]
-            Edge.create nodes[4] nodes[5]
-        |]
+        // Create a new random number generator with the same seed
+        let rng = Random rngSeed
         
-    let graph = Graph.create edges
-    
+        // Create the list of Nodes that we will use
+        let nodes =
+            [for i in 0 .. nodeCount - 1 ->
+                { Name = $"Node{i}" }]
+            
+        // Generate the random Graphs we will solve
+        let graphs =
+            [for _ in 1 .. graphCount ->
+                [for sourceIdx in 0 .. nodeCount - 2 do
+                    // We use a weighted distribution for the number of edges
+                    for _ in 1 .. randomEdgeCount[(rng.Next randomEdgeCount.Length)] do
+                        let targetIdx = rng.Next (sourceIdx + 1, nodeCount - 1)
+                        { Source = nodes[sourceIdx]; Target = nodes[targetIdx] }]
+                |> List.distinct    
+                |> Graph
+            ]
+            
+            
+    module Version2 =
+        
+        open TopologicalSort.Version2
+        
+        // Create a new random number generator with the same seed
+        let rng = Random rngSeed
+        
+        // Create the list of Nodes that we will use
+        let nodes =
+            [for i in 0 .. nodeCount - 1 ->
+                { Name = $"Node{i}" }]
+            
+        // Generate the random Graphs we will solve
+        let graphs =
+            [for _ in 1 .. graphCount ->
+                [for sourceIdx in 0 .. nodeCount - 2 do
+                    // We use a weighted distribution for the number of edges
+                    for _ in 1 .. randomEdgeCount[(rng.Next randomEdgeCount.Length)] do
+                        let targetIdx = rng.Next (sourceIdx + 1, nodeCount - 1)
+                        { Source = nodes[sourceIdx]; Target = nodes[targetIdx] }]
+                |> List.distinct    
+                |> Graph
+            ]
+            
+            
+    module Version3 =
+        
+        open TopologicalSort.Version3
+        
+        // Create a new random number generator with the same seed
+        let rng = Random rngSeed
+        
+        // Create the list of Nodes that we will use
+        let nodes =
+            [for i in 0 .. nodeCount - 1 ->
+                Node.create i]
+            
+        // Generate the random Graphs we will solve
+        let graphs =
+            [for _ in 1 .. graphCount ->
+                [for sourceIdx in 0 .. nodeCount - 2 do
+                    // We use a weighted distribution for the number of edges
+                    for _ in 1 .. randomEdgeCount[(rng.Next randomEdgeCount.Length)] do
+                        let targetIdx = rng.Next (sourceIdx + 1, nodeCount - 1)
+                        let source = nodes[sourceIdx]
+                        let target = nodes[targetIdx]
+                        Edge.create source target ]
+                |> List.distinct    
+                |> Graph
+            ]
+
+
+    module Version4 =
+        
+        open TopologicalSort.Version4
+        
+        // Create a new random number generator with the same seed
+        let rng = Random rngSeed
+        
+        // Create the list of Nodes that we will use
+        let nodes =
+            [for i in 0 .. nodeCount - 1 ->
+                Node.create i]
+            
+        // Generate the random Graphs we will solve
+        let graphs =
+            [for _ in 1 .. graphCount ->
+                [|for sourceIdx in 0 .. nodeCount - 2 do
+                     // We use a weighted distribution for the number of edges
+                     for _ in 1 .. randomEdgeCount[(rng.Next randomEdgeCount.Length)] do
+                         let targetIdx = rng.Next (sourceIdx + 1, nodeCount - 1)
+                         let source = nodes[sourceIdx]
+                         let target = nodes[targetIdx]
+                         Edge.create source target |]
+                |> Array.distinct    
+                |> Graph
+            ]
+            
+    module Version5 =
+        
+        open TopologicalSort.Version5
+        
+        // Create a new random number generator with the same seed
+        let rng = Random rngSeed
+        
+        // Create the list of Nodes that we will use
+        let nodes =
+            [for i in 0 .. nodeCount - 1 ->
+                Node.create i]
+            
+        // Generate the random Graphs we will solve
+        let graphs =
+            [for _ in 1 .. graphCount ->
+                [|for sourceIdx in 0 .. nodeCount - 2 do
+                     // We use a weighted distribution for the number of edges
+                     for _ in 1 .. randomEdgeCount[(rng.Next randomEdgeCount.Length)] do
+                         let targetIdx = rng.Next (sourceIdx + 1, nodeCount - 1)
+                         let source = nodes[sourceIdx]
+                         let target = nodes[targetIdx]
+                         Edge.create source target |]
+                |> Array.distinct    
+                |> Graph
+            ]
+            
     
 [<MemoryDiagnoser>]
 [<HardwareCounters(HardwareCounter.BranchMispredictions,
@@ -216,64 +162,61 @@ type Benchmarks () =
     
     [<Benchmark>]
     member _.V1 () =
-    
-        let result = Version1.Topological.sort V1Data.graph
-        match result with
-        | Some _ -> 1
-        | None -> 1
+        let mutable result = None
         
+        for graph in Data.Version1.graphs do
+            // I separate the assignment so I can set a breakpoint in debugging
+            let sortedOrder = Version1.sort graph
+            result <- sortedOrder
+
+        result        
         
     [<Benchmark>]
     member _.V2 () =
-    
-        let result = Version2.Topological.sort V2Data.graph
-        match result with
-        | Some _ -> 1
-        | None -> 1
+        let mutable result = None
+        
+        for graph in Data.Version2.graphs do
+            // I separate the assignment so I can set a breakpoint in debugging
+            let sortedOrder = Version2.sort graph
+            result <- sortedOrder
+
+        result  
         
         
     [<Benchmark>]
     member _.V3 () =
-    
-        let result = Version3.Topological.sort V3Data.graph
-        match result with
-        | Some _ -> 1
-        | None -> 1
+        let mutable result = None
+        
+        for graph in Data.Version3.graphs do
+            // I separate the assignment so I can set a breakpoint in debugging
+            let sortedOrder = Version3.sort graph
+            result <- sortedOrder
+
+        result  
         
         
     [<Benchmark>]
     member _.V4 () =
-    
-        let result = Version4.Topological.sort V4Data.graph
-        match result with
-        | Some _ -> 1
-        | None -> 1
+        let mutable result = None
+        
+        for graph in Data.Version4.graphs do
+            // I separate the assignment so I can set a breakpoint in debugging
+            let sortedOrder = Version4.sort graph
+            result <- sortedOrder
+
+        result  
         
         
     [<Benchmark>]
     member _.V5 () =
-    
-        let result = Version5.Topological.sort V5Data.graph
-        match result with
-        | Some _ -> 1
-        | None -> 1
+        let mutable result = None
         
-        
-    [<Benchmark>]
-    member _.V6 () =
-    
-        let result = Version6.Topological.sort V6Data.graph
-        match result with
-        | Some _ -> 1
-        | None -> 1
-        
-    [<Benchmark>]
-    member _.V7 () =
-    
-        let result = Version7.Topological.sort V7Data.graph
-        match result with
-        | Some _ -> 1
-        | None -> 1
+        for graph in Data.Version5.graphs do
+            // I separate the assignment so I can set a breakpoint in debugging
+            let sortedOrder = Version5.sort graph
+            result <- sortedOrder
+
+        result  
 
 
 let profile (version: string) loopCount =
@@ -284,31 +227,36 @@ let profile (version: string) loopCount =
     match version.ToLower() with
     | "v1" ->
         for i in 1 .. loopCount do
-            result <- result + b.V1 ()
+            match b.V1 () with
+            | Some order -> result <- result + 1
+            | None -> result <- result - 1
             
     | "v2" ->
         for i in 1 .. loopCount do
-            result <- result + b.V2 ()
+            match b.V2 () with
+            | Some order -> result <- result + 1
+            | None -> result <- result - 1
             
     | "v3" ->
         for i in 1 .. loopCount do
-            result <- result + b.V3 ()
+            match b.V3 () with
+            | Some order -> result <- result + 1
+            | None -> result <- result - 1
+            
             
     | "v4" ->
         for i in 1 .. loopCount do
-            result <- result + b.V4 ()
+            match b.V4 () with
+            | Some order -> result <- result + 1
+            | None -> result <- result - 1
+            
             
     | "v5" ->
         for i in 1 .. loopCount do
-            result <- result + b.V5 ()
-            
-    | "v6" ->
-        for i in 1 .. loopCount do
-            result <- result + b.V6 ()
-            
-    | "v7" ->
-        for i in 1 .. loopCount do
-            result <- result + b.V7 ()
+            match b.V5 () with
+            | Some order -> result <- result + 1
+            | None -> result <- result - 1
+
             
     | unknownVersion -> failwith $"Unknown version: {unknownVersion}" 
             

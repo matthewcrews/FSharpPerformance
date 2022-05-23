@@ -2,148 +2,141 @@
 
 (*
 Version 4:
-The default comparison built into F# can be slow when compared
-to the performance of using raw primitives. Instead of using
-Records to model our domain, we use primitve types that have
-been annotated with Units of Measure
+We move away from using the F# list and instead use Row/Bar/Array.
+This improves our performance due to data locality. We also
+use a .NET Queue instead of List for tracking the order of
+the nodes and a Stack to track which nodes to process next.
 *)
 
 open System.Collections.Generic
-open System.Collections.ObjectModel
+open Row
 
 
-[<Measure>] type Node
-[<Measure>] type Edge
+[<RequireQualifiedAccess>]
+module private Unit =
 
-type Sources = Dictionary<int<Node>, int64<Edge> list>
-type Targets = Dictionary<int<Node>, int64<Edge> list>
+    [<Measure>] type Node
+    [<Measure>] type Edge
+
+
+type Node = int<Unit.Node>
+
+module Node =
+    
+    let create (i: int) =
+        if i < 0 then
+            invalidArg (nameof i) "Cannot have a Node less than 0"
+            
+        LanguagePrimitives.Int32WithMeasure<Unit.Node> i
+
+
+type Edge = int64<Unit.Edge>
 
 module Edge =
 
-    let create (source: int<Node>) (target: int<Node>) =
+    let create (source: Node) (target: Node) =
         (((int64 source) <<< 32) ||| (int64 target))
-        |> LanguagePrimitives.Int64WithMeasure<Edge>
+        |> LanguagePrimitives.Int64WithMeasure<Unit.Edge>
         
-    let getSource (edge: int64<Edge>) =
+    let getSource (edge: Edge) =
         ((int64 edge) >>> 32)
         |> int
-        |> LanguagePrimitives.Int32WithMeasure<Node>
+        |> LanguagePrimitives.Int32WithMeasure<Unit.Node>
 
-    let getTarget (edge: int64<Edge>) =
+    let getTarget (edge: Edge) =
         int edge
-        |> LanguagePrimitives.Int32WithMeasure<Node>
+        |> LanguagePrimitives.Int32WithMeasure<Unit.Node>
 
-type Graph =
-    {
-        Nodes : int<Node> list
-        Origins : int<Node> list
-        Edges : int64<Edge> Set
-        Sources : ReadOnlyDictionary<int<Node>, int64<Edge> list>
-        Targets : ReadOnlyDictionary<int<Node>, int64<Edge> list>
-    }
+
+type Graph = Graph of Edge[]
     
 module Graph =
     
-    let private getDistinctNodes (links: int64<Edge> list) =
+    let private getDistinctNodes (Graph edges) =
 
-        let rec loop (links: int64<Edge> list) (nodes: int<Node> Set) =
-            match links with
-            | link::remainingLinks ->
-                let newNodes =
-                    nodes
-                    |> Set.add (Edge.getSource link)
-                    |> Set.add (Edge.getTarget link)
-                loop remainingLinks newNodes
-
-            | [] -> nodes
-
-        loop links Set.empty
-
-
-    let private createSourcesAndTargets (edges: int64<Edge> list) =
+        let distinctNodes = HashSet()
         
-        let rec loop (edges: int64<Edge> list) (sources: Sources) (targets: Targets) =
-            match edges with
-            | edge::remaining ->
-                let edgeSource = Edge.getSource edge
-                let edgeTarget = Edge.getTarget edge
-                
-                let newNodeSources =
-                    match sources.TryGetValue edgeTarget with
-                    | true, sourceNodes -> edge :: sourceNodes
-                    | false, _ -> [edge]
-                sources[edgeTarget] <- newNodeSources
-                
-                let newNodeTargets =
-                    match targets.TryGetValue edgeSource with
-                    | true, targetNodes -> edge :: targetNodes
-                    | false, _ -> [edge]
-                targets[edgeSource] <- newNodeTargets
-                
-                loop remaining sources targets
-                
-            | [] -> ReadOnlyDictionary sources, ReadOnlyDictionary targets
+        for edge in edges do
+            let source = Edge.getSource edge
+            let target = Edge.getTarget edge
+            distinctNodes.Add source |> ignore
+            distinctNodes.Add target |> ignore
+        
+        Array.ofSeq distinctNodes
+
+    
+    let private createSourcesAndTargets (nodeCount: int) (Graph edges) =
+        let sourcesAcc =
+            [|for _ in 0 .. nodeCount - 1 -> Stack ()|]
+            |> Row<Unit.Node, _>
+        let targetsAcc =
+            [|for _ in 0 .. nodeCount - 1 -> Stack ()|]
+            |> Row<Unit.Node, _>
             
-        let sources = Dictionary()
-        let targets = Dictionary ()
-        loop edges sources targets
+        for edge in edges do
+            let source = Edge.getSource edge
+            let target = Edge.getTarget edge
+            
+            sourcesAcc[target].Push edge
+            targetsAcc[source].Push edge
+            
+        let finalSources =
+            sourcesAcc
+            |> Row.map (fun stack -> stack.ToArray())
+            
+        let finalTargets =
+            targetsAcc
+            |> Row.map (fun stack -> stack.ToArray())
+            
+        finalSources.Bar, finalTargets.Bar
 
         
-    let create (edges: int64<Edge> list) =
-        let nodes = getDistinctNodes edges
-        let sources, targets = createSourcesAndTargets edges
-        let originNodes =
+    let decompose (graph: Graph) =
+        let nodes = getDistinctNodes graph
+        let sources, targets = createSourcesAndTargets nodes.Length graph
+        let sourceNodes =
             nodes
-            |> Set.filter (sources.ContainsKey >> not)
-            |> List.ofSeq
-        {
-            Edges = Set edges
-            Nodes = List.ofSeq nodes
-            Sources = sources
-            Targets = targets
-            Origins = originNodes
-        }
-     
-     
-[<RequireQualifiedAccess>]
-module Topological =
+            |> Array.filter (fun node -> sources[node].Length = 0)
 
-    let sort (graph: Graph) =
-            
-        let processEdge (graph: Graph) (remainingEdges: int64<Edge> HashSet, toProcess: int<Node> list) (edge: int64<Edge>) =
+        sourceNodes, sources, targets
+   
+
+type Sources = Bar<Unit.Node, Edge[]>
+type Targets = Bar<Unit.Node, Edge[]>
+
+let sort (graph: Graph) =
+        
+    let sourceNodes, sources, targets = Graph.decompose graph
+    
+    let toProcess = Stack ()
+    for node in sourceNodes do
+        toProcess.Push node
+        
+    let remainingEdges =
+        let (Graph edges) = graph
+        HashSet edges
+        
+    let sortedNodes = Queue ()
+    
+    while toProcess.Count > 0 do
+        let nextNode = toProcess.Pop()
+        sortedNodes.Enqueue nextNode
+        
+        targets[nextNode]
+        |> Array.iter (fun edge ->
+            let target = Edge.getTarget edge
             remainingEdges.Remove edge |> ignore
-            let edgeTarget = Edge.getTarget edge
             
             let noRemainingSources =
-                graph.Sources[edgeTarget]
-                |> List.forall (remainingEdges.Contains >> not)
+                sources[target]
+                |> Array.forall (remainingEdges.Contains >> not)
                 
             if noRemainingSources then
-                remainingEdges, (edgeTarget :: toProcess)
-                
-            else
-                remainingEdges, toProcess
+                toProcess.Push target
         
-        
-        let rec loop (graph: Graph) (remainingEdges: int64<Edge> HashSet) (toProcess: int<Node> list) (sortedNodes: int<Node> list) =
-            match toProcess with
-            | nextNode::toProcess ->
-                
-                match graph.Targets.TryGetValue nextNode with
-                | true, nodeTargets ->
-                    let remainingEdges, toProcess =
-                        ((remainingEdges, toProcess), nodeTargets)
-                        ||> List.fold (processEdge graph)
-                    loop graph remainingEdges toProcess (nextNode :: sortedNodes)
-                | false, _ ->
-                    loop graph remainingEdges toProcess (nextNode :: sortedNodes)
-                        
-            | [] ->
-                if remainingEdges.Count > 0 then
-                    None
-                else
-                    // Items have been stored in reverse order
-                    Some (List.rev sortedNodes)
+        )
 
-        let remainingEdges = HashSet graph.Edges
-        loop graph remainingEdges graph.Origins []
+    if remainingEdges.Count > 0 then
+        None
+    else
+        Some (sortedNodes.ToArray())
