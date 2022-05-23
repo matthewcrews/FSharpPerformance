@@ -18,7 +18,6 @@ module private Unit =
     [<Measure>] type Node
     [<Measure>] type Edge
 
-
 type Node = int<Unit.Node>
 
 module Node =
@@ -66,27 +65,24 @@ module Graph =
 
     
     let private createSourcesAndTargets (nodeCount: int) (Graph edges) =
-        let sourcesAcc =
-            [|for _ in 0 .. nodeCount - 1 -> Stack ()|]
-            |> Row<Unit.Node, _>
-        let targetsAcc =
-            [|for _ in 0 .. nodeCount - 1 -> Stack ()|]
-            |> Row<Unit.Node, _>
-            
+        let nodeCount = LanguagePrimitives.Int32WithMeasure<Unit.Node> nodeCount
+        let sourcesAcc = Row.create nodeCount []
+        let targetsAcc = Row.create nodeCount []
+        
         for edge in edges do
             let source = Edge.getSource edge
             let target = Edge.getTarget edge
             
-            sourcesAcc[target].Push edge
-            targetsAcc[source].Push edge
+            sourcesAcc[target] <- edge :: sourcesAcc[target]
+            targetsAcc[source] <- edge :: targetsAcc[source]
             
         let finalSources =
             sourcesAcc
-            |> Row.map (fun stack -> stack.ToArray())
+            |> Row.map Array.ofList
             
         let finalTargets =
             targetsAcc
-            |> Row.map (fun stack -> stack.ToArray())
+            |> Row.map Array.ofList
             
         finalSources.Bar, finalTargets.Bar
 

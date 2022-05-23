@@ -71,7 +71,7 @@ type EdgeTracker (nodeCount: int) =
         let bucket = location >>> 6
         let offset = location &&& 0x3F
         let mask = 1UL <<< offset
-        b.Values[bucket] <- b.Values[bucket] &&& (~~~mask)
+        b.Values[bucket] <- b.Values[bucket] &&& ~~~mask
 
     member inline b.Contains (edge: Edge) =
         let source = Edge.getSource edge
@@ -112,27 +112,24 @@ module Graph =
 
     
     let private createSourcesAndTargets (nodeCount: int) (Graph edges) =
-        let sourcesAcc =
-            [|for _ in 0 .. nodeCount - 1 -> Stack ()|]
-            |> Row<Unit.Node, _>
-        let targetsAcc =
-            [|for _ in 0 .. nodeCount - 1 -> Stack ()|]
-            |> Row<Unit.Node, _>
-            
+        let nodeCount = LanguagePrimitives.Int32WithMeasure<Unit.Node> nodeCount
+        let sourcesAcc = Row.create nodeCount []
+        let targetsAcc = Row.create nodeCount []
+        
         for edge in edges do
             let source = Edge.getSource edge
             let target = Edge.getTarget edge
             
-            sourcesAcc[target].Push edge
-            targetsAcc[source].Push edge
+            sourcesAcc[target] <- edge :: sourcesAcc[target]
+            targetsAcc[source] <- edge :: targetsAcc[source]
             
         let finalSources =
             sourcesAcc
-            |> Row.map (fun stack -> stack.ToArray())
+            |> Row.map Array.ofList
             
         let finalTargets =
             targetsAcc
-            |> Row.map (fun stack -> stack.ToArray())
+            |> Row.map Array.ofList
             
         finalSources.Bar, finalTargets.Bar
 
@@ -159,7 +156,7 @@ let sort (graph: Graph) =
     let remainingEdges = EdgeTracker nodeCount
     let (Graph edges) = graph
     for edge in edges do
-        remainingEdges.Add edge |> ignore
+        remainingEdges.Add edge
     
     while toProcess.Count > 0 do
         let nextNode = toProcess.Pop()
@@ -168,7 +165,7 @@ let sort (graph: Graph) =
         targets[nextNode]
         |> Array.iter (fun edge ->
             let target = Edge.getTarget edge
-            remainingEdges.Remove edge |> ignore
+            remainingEdges.Remove edge
             
             let noRemainingSources =
                 sources[target]
