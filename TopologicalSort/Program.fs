@@ -204,8 +204,35 @@ module Data =
                 |> Graph.create
             ]
             
+    module Version8 =
+        
+        open TopologicalSort.Version8
+        
+        // Create a new random number generator with the same seed
+        let rng = Random rngSeed
+        
+        // Create the list of Nodes that we will use
+        let nodes =
+            [for i in 0 .. nodeCount - 1 ->
+                Node.create i]
+            
+        // Generate the random Graphs we will solve
+        let graphs =
+            [for _ in 1 .. graphCount ->
+                [|for sourceIdx in 0 .. nodeCount - 2 do
+                     // We use a weighted distribution for the number of edges
+                     for _ in 1 .. randomEdgeCount[(rng.Next randomEdgeCount.Length)] do
+                         let targetIdx = rng.Next (sourceIdx + 1, nodeCount - 1)
+                         let source = nodes[sourceIdx]
+                         let target = nodes[targetIdx]
+                         Edge.create source target |]
+                |> Array.distinct    
+                |> Graph.create
+            ]
+            
     
 [<MemoryDiagnoser>]
+[<DisassemblyDiagnoser>]
 [<HardwareCounters(HardwareCounter.BranchMispredictions,
                    HardwareCounter.BranchInstructions,
                    HardwareCounter.CacheMisses)>]
@@ -259,7 +286,7 @@ type Benchmarks () =
         result  
         
         
-    [<Benchmark>]
+//    [<Benchmark>]
     member _.V5 () =
         let mutable result = None
         
@@ -293,6 +320,17 @@ type Benchmarks () =
 
         result 
 
+
+    [<Benchmark>]
+    member _.V8 () =
+        let mutable result = None
+        
+        for graph in Data.Version8.graphs do
+            // I separate the assignment so I can set a breakpoint in debugging
+            let sortedOrder = Version8.sort graph
+            result <- sortedOrder
+
+        result 
 
 let profile (version: string) loopCount =
     
@@ -343,7 +381,12 @@ let profile (version: string) loopCount =
             match b.V7 () with
             | Some order -> result <- result + 1
             | None -> result <- result - 1
-         
+            
+    | "v8" ->
+        for i in 1 .. loopCount do
+            match b.V8 () with
+            | Some order -> result <- result + 1
+            | None -> result <- result - 1
             
     | unknownVersion -> failwith $"Unknown version: {unknownVersion}" 
             

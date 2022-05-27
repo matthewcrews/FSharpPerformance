@@ -167,23 +167,6 @@ let sort (graph: Graph) =
     while toProcess.Count > 0 do
         let nextNode = toProcess.Pop()
         sortedNodes.Enqueue nextNode
-        
-        // for edge in graph.Targets[nextNode] do
-        //     let target = Edge.getTarget edge
-        //     remainingEdges.Remove edge
-            
-        //     let noRemainingSources =
-        //         let mutable result = false
-
-        //         for remainingEdge in graph.Sources[target] do
-        //             result <- remainingEdges.Contains remainingEdge
-
-        //         not result
-        //         // graph.Sources[target]
-        //         // |> Array.forall (remainingEdges.Contains >> not)
-                
-        //     if noRemainingSources then
-        //         toProcess.Push target
 
         graph.Targets[nextNode]
         |> Array.iter (fun edge ->

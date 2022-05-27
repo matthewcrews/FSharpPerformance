@@ -4,7 +4,8 @@
 
 (*
 Version 7:
-
+We are going to use a StackStack to reduce the amount of memory allocation
+and reduce the overhead compared to the .NET Stack and Queue
 *)
 
 open System
@@ -57,7 +58,7 @@ type Node = int<Units.Node>
 
 module Node =
     
-    let create (i: int) =
+    let inline create (i: int) =
         if i < 0 then
             invalidArg (nameof i) "Cannot have a Node less than 0"
             
@@ -68,16 +69,16 @@ type Edge = int64<Units.Edge>
 
 module Edge =
 
-    let create (source: Node) (target: Node) =
+    let inline create (source: Node) (target: Node) =
         (((int64 source) <<< 32) ||| (int64 target))
         |> LanguagePrimitives.Int64WithMeasure<Units.Edge>
         
-    let getSource (edge: Edge) =
+    let inline getSource (edge: Edge) =
         ((int64 edge) >>> 32)
         |> int
         |> LanguagePrimitives.Int32WithMeasure<Units.Node>
 
-    let getTarget (edge: Edge) =
+    let inline getTarget (edge: Edge) =
         int edge
         |> LanguagePrimitives.Int32WithMeasure<Units.Node>
         
@@ -184,6 +185,9 @@ module Graph =
 
 let sort (graph: Graph) =
         
+    let sources = graph.Sources
+    let targets = graph.Targets
+    
     let toProcessValues = stackalloc<Node> (int graph.Sources.Length)
     let mutable toProcess = StackStack<Node> toProcessValues
     
@@ -192,13 +196,13 @@ let sort (graph: Graph) =
 
     for i in 0 .. (int graph.Sources.Length) - 1 do
         let nodeId = LanguagePrimitives.Int32WithMeasure<Units.Node> i
-        let edges = graph.Sources[nodeId]
+        let edges = sources[nodeId]
         if edges.Length = 0 then
             toProcess.Push nodeId
         
-    let remainingEdges = EdgeTracker (int graph.Targets.Length)
+    let remainingEdges = EdgeTracker (int targets.Length)
 
-    graph.Targets
+    targets
     |> Bar.iter (fun edges ->
         for edge in edges do
             remainingEdges.Add edge)
@@ -207,12 +211,12 @@ let sort (graph: Graph) =
         let nextNode = toProcess.Pop()
         sortedNodes.Push nextNode
 
-        for edge in graph.Targets[nextNode] do
+        for edge in targets[nextNode] do
             let target = Edge.getTarget edge
             remainingEdges.Remove edge
             
             let noRemainingSources =
-                graph.Sources[target]
+                sources[target]
                 |> Array.forall (remainingEdges.Contains >> not)
                 
             if noRemainingSources then
