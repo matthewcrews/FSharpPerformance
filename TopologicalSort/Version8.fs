@@ -195,15 +195,15 @@ module Range =
     
 
 type SourceRanges = Bar<Units.Node, Range>
-type SourceNodes = Bar<Units.Index, Node>
+type SourceEdges = Bar<Units.Index, Edge>
 type TargetRanges = Bar<Units.Node, Range>
-type TargetNodes = Bar<Units.Index, Node>
+type TargetEdges = Bar<Units.Index, Edge>
 
 type Graph = {
     SourceRanges : SourceRanges
-    SourceNodes : SourceNodes
+    SourceEdges : SourceEdges
     TargetRanges : TargetRanges
-    TargetNodes : TargetNodes
+    TargetEdges : TargetEdges
 }
     
 module Graph =
@@ -227,8 +227,8 @@ module Graph =
             let source = Edge.getSource edge
             let target = Edge.getTarget edge
             
-            sourcesAcc[target] <- source :: sourcesAcc[target]
-            targetsAcc[source] <- target :: targetsAcc[source]
+            sourcesAcc[target] <- edge :: sourcesAcc[target]
+            targetsAcc[source] <- edge :: targetsAcc[source]
             
         let finalSources =
             sourcesAcc
@@ -241,7 +241,7 @@ module Graph =
         finalSources.Bar, finalTargets.Bar
 
         
-    let private createIndexesAndValues (nodeData: Bar<'Measure, Node[]>) =
+    let private createIndexesAndValues (nodeData: Bar<'Measure, Edge[]>) =
         let ranges = Row.create nodeData.Length Range.Zero
         let mutable nextStartIndex = Index.create 0
         
@@ -273,21 +273,22 @@ module Graph =
         
         {
             SourceRanges = sourceRanges
-            SourceNodes = sourceNodes
+            SourceEdges = sourceNodes
             TargetRanges = targetRanges
-            TargetNodes = targetNodes
+            TargetEdges = targetNodes
         }        
 
 
 let sort (graph: Graph) =
     
-    let toProcess = Stack<Node> ()
-    let sortedNodes = Queue<Node> ()
-
     let sourceRanges = graph.SourceRanges
-    let sourceNodes = graph.SourceNodes
+    let sourceEdges = graph.SourceEdges
     let targetRanges = graph.TargetRanges
-    let targetNodes = graph.TargetNodes
+    let targetEdges = graph.TargetEdges
+    
+    let toProcess = Stack<Node> (int sourceRanges.Length)
+    let sortedNodes = Queue<Node> (int sourceRanges.Length)
+
     
     sourceRanges
     |> Bar.iteri (fun nodeId range ->
@@ -296,14 +297,8 @@ let sort (graph: Graph) =
         
     let remainingEdges = EdgeTracker (int sourceRanges.Length)
 
-    targetRanges
-    |> Bar.iteri (fun sourceNodeId range ->
-        range
-        |> Range.iter (fun index ->
-            let targetNodeId = sourceNodes[index]
-            let edge = Edge.create sourceNodeId targetNodeId
-            remainingEdges.Add edge))
-
+    sourceEdges
+    |> Bar.iter remainingEdges.Add
     
     while toProcess.Count > 0 do
         let nextNode = toProcess.Pop()
@@ -311,24 +306,22 @@ let sort (graph: Graph) =
 
         targetRanges[nextNode]
         |> Range.iter (fun targetIndex ->
-            let targetNodeId = targetNodes[targetIndex]
-            let edgeToRemove = Edge.create nextNode targetNodeId
+            let edgeToRemove = targetEdges[targetIndex]
             remainingEdges.Remove edgeToRemove
             
             // Check if all of the Edges have been removed for this
             // Target Node
+            let targetNodeId = Edge.getTarget edgeToRemove
             let noRemainingSources =
                 sourceRanges[targetNodeId]
                 |> Range.forall (fun sourceIndex ->
-                    let sourceNode = sourceNodes[sourceIndex]
-                    let sourceEdge = Edge.create sourceNode targetNodeId
+                    let sourceEdge = sourceEdges[sourceIndex]
                     remainingEdges.Contains sourceEdge
                     |> not
                     )
                 
             if noRemainingSources then
                 toProcess.Push targetNodeId
-            
             )
 
     if remainingEdges.Count > 0 then
