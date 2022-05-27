@@ -1,15 +1,50 @@
-﻿module TopologicalSort.Version6
+﻿module TopologicalSort.Version7
+// Yeah, we're using pointers :)
+#nowarn "9"
 
 (*
-Version 6:
-Instead of a HashSet for tracking the remaining Edges, we use
-a custom BitSetTracker. BitSetTracker is faster because indexing
-into an array is faster than a HashSet contains check even though
-both of a complexity of O(1)
+Version 7:
+
 *)
 
+open System
 open System.Collections.Generic
+open System.Runtime.CompilerServices
+open FSharp.NativeInterop
 open Row
+
+     
+let inline stackalloc<'a when 'a: unmanaged> (length: int): Span<'a> =
+  let p = NativePtr.stackalloc<'a> length |> NativePtr.toVoidPtr
+  Span<'a>(p, length)
+     
+     
+[<Struct;IsByRefLike>]
+type StackStack<'T>(values: Span<'T>) =
+    [<DefaultValue>] val mutable private _count : int
+    
+    member s.Push v =
+        if s._count < values.Length then
+            values[s._count] <- v
+            s._count <- s._count + 1
+        else
+            failwith "Exceeded capacity of StackStack"
+        
+    member s.Pop () =
+        if s._count > 0 then
+            s._count <- s._count - 1
+            values[s._count]
+        else
+            failwith "Empty StackStack"
+            
+    member s.Count = s._count
+            
+    member s.ToArray () =
+        let newArray = GC.AllocateUninitializedArray s._count
+        for i in 0 .. newArray.Length - 1 do
+            newArray[i] <- values[i]
+        newArray
+        
 
 [<RequireQualifiedAccess>]
 module private Units =
@@ -149,13 +184,17 @@ module Graph =
 
 let sort (graph: Graph) =
         
-    let toProcess = Stack<Node> ()
-    let sortedNodes = Queue<Node> ()
+    let toProcessValues = stackalloc<Node> (int graph.Sources.Length)
+    let mutable toProcess = StackStack<Node> toProcessValues
+    
+    let sortedNodesValues = stackalloc<Node> (int graph.Sources.Length)
+    let mutable sortedNodes = StackStack<Node> sortedNodesValues
 
-    graph.Sources
-    |> Bar.iteri (fun nodeId edges ->
+    for i in 0 .. (int graph.Sources.Length) - 1 do
+        let nodeId = LanguagePrimitives.Int32WithMeasure<Units.Node> i
+        let edges = graph.Sources[nodeId]
         if edges.Length = 0 then
-            toProcess.Push nodeId)
+            toProcess.Push nodeId
         
     let remainingEdges = EdgeTracker (int graph.Targets.Length)
 
@@ -166,27 +205,9 @@ let sort (graph: Graph) =
     
     while toProcess.Count > 0 do
         let nextNode = toProcess.Pop()
-        sortedNodes.Enqueue nextNode
-        
-        // for edge in graph.Targets[nextNode] do
-        //     let target = Edge.getTarget edge
-        //     remainingEdges.Remove edge
-            
-        //     let noRemainingSources =
-        //         let mutable result = false
+        sortedNodes.Push nextNode
 
-        //         for remainingEdge in graph.Sources[target] do
-        //             result <- remainingEdges.Contains remainingEdge
-
-        //         not result
-        //         // graph.Sources[target]
-        //         // |> Array.forall (remainingEdges.Contains >> not)
-                
-        //     if noRemainingSources then
-        //         toProcess.Push target
-
-        graph.Targets[nextNode]
-        |> Array.iter (fun edge ->
+        for edge in graph.Targets[nextNode] do
             let target = Edge.getTarget edge
             remainingEdges.Remove edge
             
@@ -196,8 +217,6 @@ let sort (graph: Graph) =
                 
             if noRemainingSources then
                 toProcess.Push target
-        
-        )
 
     if remainingEdges.Count > 0 then
         None

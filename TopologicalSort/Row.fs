@@ -46,6 +46,10 @@ type Bar<[<Measure>] 'Measure, 'T> internal (values: 'T[]) =
         with inline get(i: int<'Measure>) =
             b._Values[int i]
             
+    member b.Item
+        with inline get(i: byte<'Measure>) =
+            b._Values[int (byte i)]
+            
             
 module Bar =
     

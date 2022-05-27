@@ -13,12 +13,12 @@ open Row
 
 
 [<RequireQualifiedAccess>]
-module private Unit =
+module private Units =
 
     [<Measure>] type Node
     [<Measure>] type Edge
 
-type Node = int<Unit.Node>
+type Node = int<Units.Node>
 
 module Node =
     
@@ -26,29 +26,29 @@ module Node =
         if i < 0 then
             invalidArg (nameof i) "Cannot have a Node less than 0"
             
-        LanguagePrimitives.Int32WithMeasure<Unit.Node> i
+        LanguagePrimitives.Int32WithMeasure<Units.Node> i
 
 
-type Edge = int64<Unit.Edge>
+type Edge = int64<Units.Edge>
 
 module Edge =
 
     let create (source: Node) (target: Node) =
         (((int64 source) <<< 32) ||| (int64 target))
-        |> LanguagePrimitives.Int64WithMeasure<Unit.Edge>
+        |> LanguagePrimitives.Int64WithMeasure<Units.Edge>
         
     let getSource (edge: Edge) =
         ((int64 edge) >>> 32)
         |> int
-        |> LanguagePrimitives.Int32WithMeasure<Unit.Node>
+        |> LanguagePrimitives.Int32WithMeasure<Units.Node>
 
     let getTarget (edge: Edge) =
         int edge
-        |> LanguagePrimitives.Int32WithMeasure<Unit.Node>
+        |> LanguagePrimitives.Int32WithMeasure<Units.Node>
 
 
-type Sources = Bar<Unit.Node, Edge[]>
-type Targets = Bar<Unit.Node, Edge[]>
+type Sources = Bar<Units.Node, Edge[]>
+type Targets = Bar<Units.Node, Edge[]>
 
 type Graph = {
     Sources : Sources
@@ -69,7 +69,7 @@ module Graph =
         nodes.Count
     
     let private createSourcesAndTargets (nodeCount: int) (edges: Edge[]) =
-        let nodeCount = LanguagePrimitives.Int32WithMeasure<Unit.Node> nodeCount
+        let nodeCount = LanguagePrimitives.Int32WithMeasure<Units.Node> nodeCount
         let sourcesAcc = Row.create nodeCount []
         let targetsAcc = Row.create nodeCount []
         
