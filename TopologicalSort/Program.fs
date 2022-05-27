@@ -239,7 +239,7 @@ module Data =
 type Benchmarks () =
     
     
-    // [<Benchmark>]
+    [<Benchmark>]
     member _.V1 () =
         let mutable result = None
         
@@ -250,7 +250,7 @@ type Benchmarks () =
 
         result        
         
-    // [<Benchmark>]
+    [<Benchmark>]
     member _.V2 () =
         let mutable result = None
         
@@ -262,7 +262,7 @@ type Benchmarks () =
         result  
         
         
-    // [<Benchmark>]
+    [<Benchmark>]
     member _.V3 () =
         let mutable result = None
         
@@ -274,7 +274,7 @@ type Benchmarks () =
         result  
         
         
-    // [<Benchmark>]
+    [<Benchmark>]
     member _.V4 () =
         let mutable result = None
         
@@ -286,7 +286,7 @@ type Benchmarks () =
         result  
         
         
-//    [<Benchmark>]
+    [<Benchmark>]
     member _.V5 () =
         let mutable result = None
         
