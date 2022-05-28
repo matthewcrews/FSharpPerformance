@@ -283,12 +283,12 @@ module Data =
             ]
             
     
-[<MemoryDiagnoser;
-  HardwareCounters(
+[<MemoryDiagnoser>]
+[<HardwareCounters(
    HardwareCounter.BranchMispredictions,
    HardwareCounter.BranchInstructions,
-   HardwareCounter.CacheMisses)
->]
+   HardwareCounter.CacheMisses)>]
+[<DisassemblyDiagnoser>]
 type Benchmarks () =
     
     [<Benchmark>]
