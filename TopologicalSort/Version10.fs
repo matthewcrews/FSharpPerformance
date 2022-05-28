@@ -1,9 +1,9 @@
-﻿module TopologicalSort.Version8
+﻿module TopologicalSort.Version10
 // Yeah, we're using pointers :)
 #nowarn "9"
 
 (*
-Version 8:
+Version 9:
 
 *)
 
@@ -14,6 +14,38 @@ open FSharp.NativeInterop
 open Microsoft.CodeAnalysis.CSharp
 open Row
 
+     
+let inline stackalloc<'a when 'a: unmanaged> (length: int): Span<'a> =
+  let p = NativePtr.stackalloc<'a> length |> NativePtr.toVoidPtr
+  Span<'a>(p, length)
+     
+     
+[<Struct;IsByRefLike>]
+type StackStack<'T>(values: Span<'T>) =
+    [<DefaultValue>] val mutable private _count : int
+    
+    member s.Push v =
+        if s._count < values.Length then
+            values[s._count] <- v
+            s._count <- s._count + 1
+        else
+            failwith "Exceeded capacity of StackStack"
+        
+    member s.Pop () =
+        if s._count > 0 then
+            s._count <- s._count - 1
+            values[s._count]
+        else
+            failwith "Empty StackStack"
+            
+    member s.Count = s._count
+            
+    member s.ToArray () =
+        let newArray = GC.AllocateUninitializedArray s._count
+        for i in 0 .. newArray.Length - 1 do
+            newArray[i] <- values[i]
+        newArray
+        
 
 [<RequireQualifiedAccess>]
 module private Units =
@@ -245,26 +277,32 @@ let sort (graph: Graph) =
     let targetRanges = graph.TargetRanges
     let targetEdges = graph.TargetEdges
     
-    let toProcess = Stack<Node> (int sourceRanges.Length)
-    let sortedNodes = Queue<Node> (int sourceRanges.Length)
-
+    let result = GC.AllocateUninitializedArray (int sourceRanges.Length)
+    let mutable nextToProcessIdx = 0
+    let mutable resultCount = 0
     
-    sourceRanges
-    |> Bar.iteri (fun nodeId range ->
-        if range.Length = 0<Units.Index> then
-            toProcess.Push nodeId)
+    let mutable nodeId = 0<Units.Node>
+    let bound = sourceRanges.Length
+    
+    while nodeId < bound do
+        if sourceRanges[nodeId].Length = 0<Units.Index> then
+            result[resultCount] <- nodeId
+            resultCount <- resultCount + 1
+        nodeId <- nodeId + 1<Units.Node>
         
     let remainingEdges = EdgeTracker (int sourceRanges.Length)
 
     sourceEdges
     |> Bar.iter remainingEdges.Add
     
-    while toProcess.Count > 0 do
-        let nextNode = toProcess.Pop()
-        sortedNodes.Enqueue nextNode
+    while nextToProcessIdx < result.Length && nextToProcessIdx < resultCount do
+        let nextNode = result[nextToProcessIdx]
+        nextToProcessIdx <- nextToProcessIdx + 1
 
-        targetRanges[nextNode]
-        |> Range.iter (fun targetIndex ->
+        let targetRange = targetRanges[nextNode]
+        let mutable targetIndex = targetRange.Start
+        let bound = targetRange.Start + targetRange.Length
+        while targetIndex < bound do
             let edgeToRemove = targetEdges[targetIndex]
             remainingEdges.Remove edgeToRemove
             
@@ -280,10 +318,13 @@ let sort (graph: Graph) =
                     )
                 
             if noRemainingSources then
-                toProcess.Push targetNodeId
-            )
+                result[resultCount] <- targetNodeId
+                resultCount <- resultCount + 1
+
+            targetIndex <- targetIndex + 1<Units.Index>
+
 
     if remainingEdges.Count > 0 then
         None
     else
-        Some (sortedNodes.ToArray())
+        Some result

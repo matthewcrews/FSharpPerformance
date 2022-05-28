@@ -230,6 +230,58 @@ module Data =
                 |> Graph.create
             ]
             
+    module Version9 =
+        
+        open TopologicalSort.Version9
+        
+        // Create a new random number generator with the same seed
+        let rng = Random rngSeed
+        
+        // Create the list of Nodes that we will use
+        let nodes =
+            [for i in 0 .. nodeCount - 1 ->
+                Node.create i]
+            
+        // Generate the random Graphs we will solve
+        let graphs =
+            [for _ in 1 .. graphCount ->
+                [|for sourceIdx in 0 .. nodeCount - 2 do
+                     // We use a weighted distribution for the number of edges
+                     for _ in 1 .. randomEdgeCount[(rng.Next randomEdgeCount.Length)] do
+                         let targetIdx = rng.Next (sourceIdx + 1, nodeCount - 1)
+                         let source = nodes[sourceIdx]
+                         let target = nodes[targetIdx]
+                         Edge.create source target |]
+                |> Array.distinct    
+                |> Graph.create
+            ]
+            
+    module Version10 =
+        
+        open TopologicalSort.Version10
+        
+        // Create a new random number generator with the same seed
+        let rng = Random rngSeed
+        
+        // Create the list of Nodes that we will use
+        let nodes =
+            [for i in 0 .. nodeCount - 1 ->
+                Node.create i]
+            
+        // Generate the random Graphs we will solve
+        let graphs =
+            [for _ in 1 .. graphCount ->
+                [|for sourceIdx in 0 .. nodeCount - 2 do
+                     // We use a weighted distribution for the number of edges
+                     for _ in 1 .. randomEdgeCount[(rng.Next randomEdgeCount.Length)] do
+                         let targetIdx = rng.Next (sourceIdx + 1, nodeCount - 1)
+                         let source = nodes[sourceIdx]
+                         let target = nodes[targetIdx]
+                         Edge.create source target |]
+                |> Array.distinct    
+                |> Graph.create
+            ]
+            
     
 [<MemoryDiagnoser>]
 [<DisassemblyDiagnoser>]
@@ -238,8 +290,7 @@ module Data =
                    HardwareCounter.CacheMisses)>]
 type Benchmarks () =
     
-    
-    [<Benchmark>]
+//    [<Benchmark>]
     member _.V1 () =
         let mutable result = None
         
@@ -250,7 +301,7 @@ type Benchmarks () =
 
         result        
         
-    [<Benchmark>]
+//    [<Benchmark>]
     member _.V2 () =
         let mutable result = None
         
@@ -262,7 +313,7 @@ type Benchmarks () =
         result  
         
         
-    [<Benchmark>]
+//    [<Benchmark>]
     member _.V3 () =
         let mutable result = None
         
@@ -274,7 +325,7 @@ type Benchmarks () =
         result  
         
         
-    [<Benchmark>]
+//    [<Benchmark>]
     member _.V4 () =
         let mutable result = None
         
@@ -286,7 +337,7 @@ type Benchmarks () =
         result  
         
         
-    [<Benchmark>]
+//    [<Benchmark>]
     member _.V5 () =
         let mutable result = None
         
@@ -298,7 +349,7 @@ type Benchmarks () =
         result  
 
     
-    [<Benchmark>]
+//    [<Benchmark>]
     member _.V6 () =
         let mutable result = None
         
@@ -309,7 +360,7 @@ type Benchmarks () =
 
         result
         
-    [<Benchmark>]
+//    [<Benchmark>]
     member _.V7 () =
         let mutable result = None
         
@@ -321,13 +372,35 @@ type Benchmarks () =
         result 
 
 
-    [<Benchmark>]
+//    [<Benchmark>]
     member _.V8 () =
         let mutable result = None
         
         for graph in Data.Version8.graphs do
             // I separate the assignment so I can set a breakpoint in debugging
             let sortedOrder = Version8.sort graph
+            result <- sortedOrder
+
+        result
+        
+    [<Benchmark>]
+    member _.V9 () =
+        let mutable result = None
+        
+        for graph in Data.Version9.graphs do
+            // I separate the assignment so I can set a breakpoint in debugging
+            let sortedOrder = Version9.sort graph
+            result <- sortedOrder
+
+        result
+        
+    [<Benchmark>]
+    member _.V10 () =
+        let mutable result = None
+        
+        for graph in Data.Version10.graphs do
+            // I separate the assignment so I can set a breakpoint in debugging
+            let sortedOrder = Version10.sort graph
             result <- sortedOrder
 
         result 
@@ -385,6 +458,18 @@ let profile (version: string) loopCount =
     | "v8" ->
         for i in 1 .. loopCount do
             match b.V8 () with
+            | Some order -> result <- result + 1
+            | None -> result <- result - 1
+            
+    | "v9" ->
+        for i in 1 .. loopCount do
+            match b.V9 () with
+            | Some order -> result <- result + 1
+            | None -> result <- result - 1
+            
+    | "v10" ->
+        for i in 1 .. loopCount do
+            match b.V10 () with
             | Some order -> result <- result + 1
             | None -> result <- result - 1
             
