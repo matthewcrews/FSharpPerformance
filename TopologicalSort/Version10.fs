@@ -282,9 +282,8 @@ let sort (graph: Graph) =
     let mutable resultCount = 0
     
     let mutable nodeId = 0<Units.Node>
-    let bound = sourceRanges.Length
     
-    while nodeId < bound do
+    while nodeId < sourceRanges.Length do
         if sourceRanges[nodeId].Length = 0<Units.Index> then
             result[resultCount] <- nodeId
             resultCount <- resultCount + 1
@@ -296,24 +295,20 @@ let sort (graph: Graph) =
     |> Bar.iter remainingEdges.Add
     
     while nextToProcessIdx < result.Length && nextToProcessIdx < resultCount do
-        let nextNode = result[nextToProcessIdx]
-        nextToProcessIdx <- nextToProcessIdx + 1
 
-        let targetRange = targetRanges[nextNode]
+        let targetRange = targetRanges[result[nextToProcessIdx]]
         let mutable targetIndex = targetRange.Start
         let bound = targetRange.Start + targetRange.Length
         while targetIndex < bound do
-            let edgeToRemove = targetEdges[targetIndex]
-            remainingEdges.Remove edgeToRemove
+            remainingEdges.Remove targetEdges[targetIndex]
             
             // Check if all of the Edges have been removed for this
             // Target Node
-            let targetNodeId = Edge.getTarget edgeToRemove
+            let targetNodeId = Edge.getTarget targetEdges[targetIndex]
             let noRemainingSources =
                 sourceRanges[targetNodeId]
                 |> Range.forall (fun sourceIndex ->
-                    let sourceEdge = sourceEdges[sourceIndex]
-                    remainingEdges.Contains sourceEdge
+                    remainingEdges.Contains sourceEdges[sourceIndex]
                     |> not
                     )
                 
@@ -322,6 +317,8 @@ let sort (graph: Graph) =
                 resultCount <- resultCount + 1
 
             targetIndex <- targetIndex + 1<Units.Index>
+        
+        nextToProcessIdx <- nextToProcessIdx + 1
 
 
     if remainingEdges.Count > 0 then

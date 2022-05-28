@@ -283,15 +283,16 @@ module Data =
             ]
             
     
-[<MemoryDiagnoser>]
-[<DisassemblyDiagnoser>]
-[<HardwareCounters(HardwareCounter.BranchMispredictions,
-                   HardwareCounter.BranchInstructions,
-                   HardwareCounter.CacheMisses)>]
+[<MemoryDiagnoser;
+  HardwareCounters(
+   HardwareCounter.BranchMispredictions,
+   HardwareCounter.BranchInstructions,
+   HardwareCounter.CacheMisses)
+>]
 type Benchmarks () =
     
     [<Benchmark>]
-    member _.V1 () =
+    member _.Version_01 () =
         let mutable result = None
         
         for graph in Data.Version1.graphs do
@@ -302,7 +303,7 @@ type Benchmarks () =
         result        
         
     [<Benchmark>]
-    member _.V2 () =
+    member _.Version_02 () =
         let mutable result = None
         
         for graph in Data.Version2.graphs do
@@ -314,7 +315,7 @@ type Benchmarks () =
         
         
     [<Benchmark>]
-    member _.V3 () =
+    member _.Version_03 () =
         let mutable result = None
         
         for graph in Data.Version3.graphs do
@@ -326,7 +327,7 @@ type Benchmarks () =
         
         
     [<Benchmark>]
-    member _.V4 () =
+    member _.Version_04 () =
         let mutable result = None
         
         for graph in Data.Version4.graphs do
@@ -338,7 +339,7 @@ type Benchmarks () =
         
         
     [<Benchmark>]
-    member _.V5 () =
+    member _.Version_05 () =
         let mutable result = None
         
         for graph in Data.Version5.graphs do
@@ -350,7 +351,7 @@ type Benchmarks () =
 
     
     [<Benchmark>]
-    member _.V6 () =
+    member _.Version_06 () =
         let mutable result = None
         
         for graph in Data.Version6.graphs do
@@ -361,7 +362,7 @@ type Benchmarks () =
         result
         
     [<Benchmark>]
-    member _.V7 () =
+    member _.Version_07 () =
         let mutable result = None
         
         for graph in Data.Version7.graphs do
@@ -373,7 +374,7 @@ type Benchmarks () =
 
 
     [<Benchmark>]
-    member _.V8 () =
+    member _.Version_08 () =
         let mutable result = None
         
         for graph in Data.Version8.graphs do
@@ -384,7 +385,7 @@ type Benchmarks () =
         result
         
     [<Benchmark>]
-    member _.V9 () =
+    member _.Version_09 () =
         let mutable result = None
         
         for graph in Data.Version9.graphs do
@@ -395,7 +396,7 @@ type Benchmarks () =
         result
         
     [<Benchmark>]
-    member _.V10 () =
+    member _.Version_10 () =
         let mutable result = None
         
         for graph in Data.Version10.graphs do
@@ -413,63 +414,63 @@ let profile (version: string) loopCount =
     match version.ToLower() with
     | "v1" ->
         for i in 1 .. loopCount do
-            match b.V1 () with
+            match b.Version_01 () with
             | Some order -> result <- result + 1
             | None -> result <- result - 1
             
     | "v2" ->
         for i in 1 .. loopCount do
-            match b.V2 () with
+            match b.Version_02 () with
             | Some order -> result <- result + 1
             | None -> result <- result - 1
             
     | "v3" ->
         for i in 1 .. loopCount do
-            match b.V3 () with
+            match b.Version_03 () with
             | Some order -> result <- result + 1
             | None -> result <- result - 1
             
             
     | "v4" ->
         for i in 1 .. loopCount do
-            match b.V4 () with
+            match b.Version_04 () with
             | Some order -> result <- result + 1
             | None -> result <- result - 1
             
             
     | "v5" ->
         for i in 1 .. loopCount do
-            match b.V5 () with
+            match b.Version_05 () with
             | Some order -> result <- result + 1
             | None -> result <- result - 1
             
-    | "v6" ->
-        for i in 1 .. loopCount do
-            match b.V6 () with
-            | Some order -> result <- result + 1
-            | None -> result <- result - 1
+//    | "v6" ->
+//        for i in 1 .. loopCount do
+//            match b.V06 () with
+//            | Some order -> result <- result + 1
+//            | None -> result <- result - 1
 
     | "v7" ->
         for i in 1 .. loopCount do
-            match b.V7 () with
+            match b.Version_07 () with
             | Some order -> result <- result + 1
             | None -> result <- result - 1
             
     | "v8" ->
         for i in 1 .. loopCount do
-            match b.V8 () with
+            match b.Version_08 () with
             | Some order -> result <- result + 1
             | None -> result <- result - 1
             
     | "v9" ->
         for i in 1 .. loopCount do
-            match b.V9 () with
+            match b.Version_09 () with
             | Some order -> result <- result + 1
             | None -> result <- result - 1
             
     | "v10" ->
         for i in 1 .. loopCount do
-            match b.V10 () with
+            match b.Version_10 () with
             | Some order -> result <- result + 1
             | None -> result <- result - 1
             
