@@ -55,7 +55,7 @@ module private Units =
     [<Measure>] type Index
 
 
-type Index = int<Units.Index>
+type Index = int16<Units.Index>
 
 module Index =
         
@@ -63,10 +63,10 @@ module Index =
         if i < 0 then
             invalidArg (nameof i) "Cannot have an Index less than 0"
             
-        LanguagePrimitives.Int32WithMeasure<Units.Index> i
+        LanguagePrimitives.Int16WithMeasure<Units.Index> (int16 i)
 
 
-type Node = int<Units.Node>
+type Node = int16<Units.Node>
 
 module Node =
     
@@ -74,25 +74,25 @@ module Node =
         if i < 0 then
             invalidArg (nameof i) "Cannot have a Node less than 0"
             
-        LanguagePrimitives.Int32WithMeasure<Units.Node> i
+        LanguagePrimitives.Int16WithMeasure<Units.Node> (int16 i)
 
 
-type Edge = int64<Units.Edge>
+type Edge = int<Units.Edge>
 
 module Edge =
 
     let inline create (source: Node) (target: Node) =
-        (((int64 source) <<< 32) ||| (int64 target))
-        |> LanguagePrimitives.Int64WithMeasure<Units.Edge>
+        (((int source) <<< 16) ||| (int target))
+        |> LanguagePrimitives.Int32WithMeasure<Units.Edge>
         
     let inline getSource (edge: Edge) =
-        ((int64 edge) >>> 32)
-        |> int
-        |> LanguagePrimitives.Int32WithMeasure<Units.Node>
+        ((int edge) >>> 16)
+        |> int16
+        |> LanguagePrimitives.Int16WithMeasure<Units.Node>
 
     let inline getTarget (edge: Edge) =
-        int edge
-        |> LanguagePrimitives.Int32WithMeasure<Units.Node>
+        int16 edge
+        |> LanguagePrimitives.Int16WithMeasure<Units.Node>
         
 
 type EdgeTracker (nodeCount: int) =
@@ -168,7 +168,7 @@ module Range =
 
         while i < bound do
             f i
-            i <- i + LanguagePrimitives.Int32WithMeasure<Units.Index> 1
+            i <- i + LanguagePrimitives.Int16WithMeasure<Units.Index> 1s
             
             
     let inline forall ([<InlineIfLambda>] f: Index -> bool) (range: Range) =
@@ -178,7 +178,7 @@ module Range =
 
         while i < bound && result do
             result <- f i
-            i <- i + LanguagePrimitives.Int32WithMeasure<Units.Index> 1
+            i <- i + LanguagePrimitives.Int16WithMeasure<Units.Index> 1s
         
         result
             
@@ -284,7 +284,7 @@ let sort (graph: Graph) =
     let mutable nodeId = 0<Units.Node>
     
     while nodeId < sourceRanges.Length do
-        if sourceRanges[nodeId].Length = 0<Units.Index> then
+        if sourceRanges[nodeId].Length = 0s<Units.Index> then
             result[resultCount] <- nodeId
             resultCount <- resultCount + 1
         nodeId <- nodeId + 1<Units.Node>
@@ -313,10 +313,10 @@ let sort (graph: Graph) =
                     )
                 
             if noRemainingSources then
-                result[resultCount] <- targetNodeId
+                result[resultCount] <- LanguagePrimitives.Int32WithMeasure<Units.Node> (int targetNodeId)
                 resultCount <- resultCount + 1
 
-            targetIndex <- targetIndex + 1<Units.Index>
+            targetIndex <- targetIndex + 1s<Units.Index>
         
         nextToProcessIdx <- nextToProcessIdx + 1
 

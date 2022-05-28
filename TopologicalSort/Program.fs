@@ -288,7 +288,7 @@ module Data =
    HardwareCounter.BranchMispredictions,
    HardwareCounter.BranchInstructions,
    HardwareCounter.CacheMisses)>]
-[<DisassemblyDiagnoser>]
+//[<DisassemblyDiagnoser>]
 type Benchmarks () =
     
     [<Benchmark>]

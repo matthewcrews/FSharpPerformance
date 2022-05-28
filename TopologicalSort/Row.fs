@@ -48,7 +48,11 @@ type Bar<[<Measure>] 'Measure, 'T> internal (values: 'T[]) =
             
     member b.Item
         with inline get(i: byte<'Measure>) =
-            b._Values[int (byte i)]
+            b._Values[int i]
+            
+    member b.Item
+        with inline get(i: int16<'Measure>) =
+            b._Values[int i]
             
             
 module Bar =
@@ -99,6 +103,13 @@ type Row<[<Measure>] 'Measure, 'T>(values: array<'T>) =
         and inline set (index: int<'Measure>) value =
             r.Values[int index] <- value
 
+    member r.Item
+        with inline get (i: int16<'Measure>) =
+            r.Values[int i]
+
+        and inline set (index: int16<'Measure>) value =
+            r.Values[int index] <- value
+    
     member _.Length = LanguagePrimitives.Int32WithMeasure<'Measure> values.Length
 
     member r.Bar = Bar<'Measure, _> r.Values
