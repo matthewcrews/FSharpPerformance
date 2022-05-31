@@ -40,11 +40,11 @@ AMD Ryzen 9 3900X, 1 CPU, 24 logical and 12 physical cores
 
 ## Profiling
 
-To profile one methods you will need to build the 
+To profile a specific method, you can use the following command.
 
 `dotnet run -c Release --task profile --method <Method>  --iterations <Iterations>`
 
 The value for `<Method>` corresponds to which version of Topological Sort you want to profile. Valid inputs are `V01` through `V10`.
 
-`<Iterations>` is the number of times you want the method to be called. You want the number to be high enough that performance is indicative of real-world usage. Ideally you want the method to be called enough that the JIT fully optimizes the code. I target at least 5 seconds as a minimum baseline. I would start with 1,000 iterations and increase by 10x until you get a reasonable amount of runtime.
+`<Iterations>` is the number of times you want the method to be called. You want the number to be high enough that the performance is indicative of real-world usage. Ideally you want the method to be called enough that the JIT fully optimizes the code. I target at least 5 seconds as a baseline. I would start with 1,000 iterations and increase by 10x until you get a reasonable amount of runtime.
 

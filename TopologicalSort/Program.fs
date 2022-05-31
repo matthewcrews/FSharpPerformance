@@ -315,7 +315,6 @@ type Benchmarks () =
 
         result  
         
-        
     [<Benchmark>]
     member _.V03 () =
         let mutable result = None
@@ -327,8 +326,7 @@ type Benchmarks () =
 
         result  
         
-        
-    [<Benchmark>]
+    // [<Benchmark>]
     member _.V04 () =
         let mutable result = None
         
@@ -339,8 +337,7 @@ type Benchmarks () =
 
         result  
         
-        
-    [<Benchmark>]
+    // [<Benchmark>]
     member _.V05 () =
         let mutable result = None
         
@@ -351,8 +348,7 @@ type Benchmarks () =
 
         result  
 
-    
-    [<Benchmark>]
+    // [<Benchmark>]
     member _.V06 () =
         let mutable result = None
         
@@ -363,7 +359,7 @@ type Benchmarks () =
 
         result
         
-    [<Benchmark>]
+    // [<Benchmark>]
     member _.V07 () =
         let mutable result = None
         
@@ -374,8 +370,7 @@ type Benchmarks () =
 
         result 
 
-
-    [<Benchmark>]
+    // [<Benchmark>]
     member _.V08 () =
         let mutable result = None
         
@@ -385,8 +380,8 @@ type Benchmarks () =
             result <- sortedOrder
 
         result
-        
-    [<Benchmark>]
+
+    // [<Benchmark>]
     member _.V09 () =
         let mutable result = None
         
@@ -397,7 +392,7 @@ type Benchmarks () =
 
         result
         
-    [<Benchmark>]
+    // [<Benchmark>]
     member _.V10 () =
         let mutable result = None
         

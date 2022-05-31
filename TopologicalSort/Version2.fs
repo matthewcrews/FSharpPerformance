@@ -1,9 +1,9 @@
 module TopologicalSort.Version2
 
 (*
-Version 1:
-This is a naive first approach to writing Kahn's algorithm using 
-functional programming style and immutability
+Version 2:
+Instead of a Graph being a list of Edges, we create Maps
+to hold the Source Edges and Target Edges for each Node
 *)
 
 type Node =
