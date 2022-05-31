@@ -1,8 +1,10 @@
 ﻿open System
+open Argu
 open BenchmarkDotNet.Diagnosers
-open TopologicalSort
 open BenchmarkDotNet.Attributes
 open BenchmarkDotNet.Running
+open TopologicalSort
+
 
 module Data =
 
@@ -292,7 +294,7 @@ module Data =
 type Benchmarks () =
     
     [<Benchmark>]
-    member _.Version_01 () =
+    member _.V01 () =
         let mutable result = None
         
         for graph in Data.Version1.graphs do
@@ -303,7 +305,7 @@ type Benchmarks () =
         result        
         
     [<Benchmark>]
-    member _.Version_02 () =
+    member _.V02 () =
         let mutable result = None
         
         for graph in Data.Version2.graphs do
@@ -315,7 +317,7 @@ type Benchmarks () =
         
         
     [<Benchmark>]
-    member _.Version_03 () =
+    member _.V03 () =
         let mutable result = None
         
         for graph in Data.Version3.graphs do
@@ -327,7 +329,7 @@ type Benchmarks () =
         
         
     [<Benchmark>]
-    member _.Version_04 () =
+    member _.V04 () =
         let mutable result = None
         
         for graph in Data.Version4.graphs do
@@ -339,7 +341,7 @@ type Benchmarks () =
         
         
     [<Benchmark>]
-    member _.Version_05 () =
+    member _.V05 () =
         let mutable result = None
         
         for graph in Data.Version5.graphs do
@@ -351,7 +353,7 @@ type Benchmarks () =
 
     
     [<Benchmark>]
-    member _.Version_06 () =
+    member _.V06 () =
         let mutable result = None
         
         for graph in Data.Version6.graphs do
@@ -362,7 +364,7 @@ type Benchmarks () =
         result
         
     [<Benchmark>]
-    member _.Version_07 () =
+    member _.V07 () =
         let mutable result = None
         
         for graph in Data.Version7.graphs do
@@ -374,7 +376,7 @@ type Benchmarks () =
 
 
     [<Benchmark>]
-    member _.Version_08 () =
+    member _.V08 () =
         let mutable result = None
         
         for graph in Data.Version8.graphs do
@@ -385,7 +387,7 @@ type Benchmarks () =
         result
         
     [<Benchmark>]
-    member _.Version_09 () =
+    member _.V09 () =
         let mutable result = None
         
         for graph in Data.Version9.graphs do
@@ -396,7 +398,7 @@ type Benchmarks () =
         result
         
     [<Benchmark>]
-    member _.Version_10 () =
+    member _.V10 () =
         let mutable result = None
         
         for graph in Data.Version10.graphs do
@@ -412,65 +414,65 @@ let profile (version: string) loopCount =
     let mutable result = 0
     
     match version.ToLower() with
-    | "v1" ->
+    | "v01" ->
         for i in 1 .. loopCount do
-            match b.Version_01 () with
+            match b.V01 () with
             | Some order -> result <- result + 1
             | None -> result <- result - 1
             
-    | "v2" ->
+    | "v02" ->
         for i in 1 .. loopCount do
-            match b.Version_02 () with
+            match b.V02 () with
             | Some order -> result <- result + 1
             | None -> result <- result - 1
             
-    | "v3" ->
+    | "v03" ->
         for i in 1 .. loopCount do
-            match b.Version_03 () with
-            | Some order -> result <- result + 1
-            | None -> result <- result - 1
-            
-            
-    | "v4" ->
-        for i in 1 .. loopCount do
-            match b.Version_04 () with
+            match b.V03 () with
             | Some order -> result <- result + 1
             | None -> result <- result - 1
             
             
-    | "v5" ->
+    | "v04" ->
         for i in 1 .. loopCount do
-            match b.Version_05 () with
+            match b.V04 () with
             | Some order -> result <- result + 1
             | None -> result <- result - 1
             
-//    | "v6" ->
-//        for i in 1 .. loopCount do
-//            match b.V06 () with
-//            | Some order -> result <- result + 1
-//            | None -> result <- result - 1
+            
+    | "v05" ->
+        for i in 1 .. loopCount do
+            match b.V05 () with
+            | Some order -> result <- result + 1
+            | None -> result <- result - 1
+            
+    | "v06" ->
+        for i in 1 .. loopCount do
+            match b.V06 () with
+            | Some order -> result <- result + 1
+            | None -> result <- result - 1
 
-    | "v7" ->
+    | "v07" ->
         for i in 1 .. loopCount do
-            match b.Version_07 () with
+            match b.V07 () with
             | Some order -> result <- result + 1
             | None -> result <- result - 1
             
-    | "v8" ->
+    | "v08" ->
         for i in 1 .. loopCount do
-            match b.Version_08 () with
+            match b.V08 () with
             | Some order -> result <- result + 1
             | None -> result <- result - 1
             
-    | "v9" ->
+    | "v09" ->
         for i in 1 .. loopCount do
-            match b.Version_09 () with
+            match b.V09 () with
             | Some order -> result <- result + 1
             | None -> result <- result - 1
             
     | "v10" ->
         for i in 1 .. loopCount do
-            match b.Version_10 () with
+            match b.V10 () with
             | Some order -> result <- result + 1
             | None -> result <- result - 1
             
@@ -478,24 +480,38 @@ let profile (version: string) loopCount =
             
     result
 
+[<RequireQualifiedAccess>]
+type Args =
+    | Task of task: string
+    | Method of method: string
+    | Iterations of iterations: int
+    
+    interface IArgParserTemplate with
+        member this.Usage =
+            match this with
+            | Task _ -> "Which task to perform. Options: Benchmark or Profile"
+            | Method _ -> "Which Method to profile. Options: V<number>. <number> = 01 - 10"
+            | Iterations _ -> "Number of iterations of the Method to perform for profiling"
 
 
 [<EntryPoint>]
-let main args =
+let main argv =
 
-    match args[0].ToLower() with
-    | "benchmark" ->
-    
+    let parser = ArgumentParser.Create<Args> (programName = "Topological Sort")
+    let results = parser.Parse argv
+    let task = results.GetResult Args.Task
+
+    match task.ToLower() with
+    | "benchmark" -> 
         let _ = BenchmarkRunner.Run<Benchmarks>()
         ()
-        
+
     | "profile" ->
-        let version = args[1]
-        let loopCount = int args[2]
-        let _ = profile version loopCount
+        let method = results.GetResult Args.Method
+        let iterations = results.GetResult Args.Iterations
+        let _ = profile method iterations
         ()
         
-    | unknownCommand -> failwith $"Unknown command: {unknownCommand}"
-    
+    | unknownTask -> failwith $"Unknown task: {unknownTask}"
     
     1
