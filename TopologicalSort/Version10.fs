@@ -9,9 +9,10 @@ Version 9:
 
 open System
 open System.Collections.Generic
+open System.Numerics
 open System.Runtime.CompilerServices
 open FSharp.NativeInterop
-open Microsoft.CodeAnalysis.CSharp
+//open Microsoft.CodeAnalysis.CSharp
 open Row
 
      
@@ -94,7 +95,12 @@ module Edge =
         int edge
         |> LanguagePrimitives.Int32WithMeasure<Units.Node>
         
-
+    let inline getSourceBatch (vedge: Vector<int64>) =
+        Vector.ShiftRightLogical(vedge, 32) |> Vector.AsVectorInt32
+    
+    let inline getTargetBatch (vedge: Vector<int64>) =
+        vedge |> Vector.AsVectorInt32
+        
 type EdgeTracker (nodeCount: int) =
     let bitsRequired = ((nodeCount * nodeCount) + 63) / 64
     let values = Array.create bitsRequired 0UL
@@ -111,7 +117,15 @@ type EdgeTracker (nodeCount: int) =
         let offset = location &&& 0x3F
         let mask = 1UL <<< offset
         b.Values[bucket] <- b.Values[bucket] ||| mask
-        
+    
+    member inline b.BatchAdd(edge: Vector<int64>) =
+        let sources = Edge.getSourceBatch edge
+        let targets = Edge.getTargetBatch edge
+        let location = sources * b.NodeCount + targets
+        let bucket = Vector.ShiftRightLogical(location, 6)
+        let offset = Vector.BitwiseAnd(location,0x3F|>Vector)
+        let mask = Vector.ShiftLeft(offset, 1) // ???
+        ()
     member inline b.Remove (edge: Edge) =
         let source = Edge.getSource edge
         let target = Edge.getTarget edge
@@ -291,6 +305,7 @@ let sort (graph: Graph) =
         
     let remainingEdges = EdgeTracker (int sourceRanges.Length)
 
+    // TODO: BatchAdd
     sourceEdges
     |> Bar.iter remainingEdges.Add
     
@@ -308,6 +323,7 @@ let sort (graph: Graph) =
             let noRemainingSources =
                 sourceRanges[targetNodeId]
                 |> Range.forall (fun sourceIndex ->
+                    //TODO: BatchContains
                     remainingEdges.Contains sourceEdges[sourceIndex]
                     |> not
                     )
