@@ -4,6 +4,7 @@ open System
 open System.Collections.Generic
 open System.Numerics
 open System.Runtime.InteropServices
+open System.Threading.Tasks
 open Row
 
 [<RequireQualifiedAccess>]
@@ -196,7 +197,12 @@ module Graph =
                 count <- count + (BitOperations.PopCount tracker[i])
             count
             
-            
+        static member SortMultiple(graphs: Graph[]) =
+            let inputLength = graphs.Length
+            let result = GC.AllocateUninitializedArray inputLength
+            Parallel.For(0, inputLength, fun i ->
+                result.[i] <- GraphType.Sort &graphs[i]) |> ignore
+            result
         static member Sort(graph: inref<Graph>) =
             let sourceRanges = graph.SourceRanges
             let sourceEdges = graph.SourceEdges
