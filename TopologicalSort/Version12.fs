@@ -281,11 +281,11 @@ let sort (graph: Graph) =
     
     let mutable nodeId = 0<Units.Node>
     
-    let sourceCounts = stackalloc<byte> (int targetRanges.Length)
+    let sourceCounts = stackalloc<uint> (int targetRanges.Length)
     
     while nodeId < sourceRanges.Length do
-        sourceCounts[int nodeId] <- byte sourceRanges[nodeId].Length
-        if sourceCounts[int nodeId] = 0uy then
+        sourceCounts[int nodeId] <- uint sourceRanges[nodeId].Length
+        if sourceCounts[int nodeId] = 0u then
             result[resultCount] <- nodeId
             resultCount <- resultCount + 1
         nodeId <- nodeId + 1<_>
@@ -298,8 +298,8 @@ let sort (graph: Graph) =
         let bound = targetRange.Start + targetRange.Length
         while targetIndex < bound do
             let targetNodeId = Edge.getTarget targetEdges[targetIndex]
-            sourceCounts[int targetNodeId] <- sourceCounts[int targetNodeId] - 1uy
-            if sourceCounts[int targetNodeId] = 0uy then
+            sourceCounts[int targetNodeId] <- sourceCounts[int targetNodeId] - 1u
+            if sourceCounts[int targetNodeId] = 0u then
                 result[resultCount] <- targetNodeId
                 resultCount <- resultCount + 1
 
