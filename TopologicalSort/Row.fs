@@ -72,6 +72,16 @@ module Bar =
             let i = LanguagePrimitives.Int32WithMeasure<'Measure> i
             f i array[int i]
 
+//    [<CompiledName("Map")>]
+//    let inline map ([<InlineIfLambda>] f) (row: Bar<'Measure, _>) =
+//            let array = row._Values
+//            let res = Array.zeroCreate array.Length
+//
+//            for i = 0 to array.Length - 1 do
+//                res[i] <- f array[i]
+//            
+//            Bar<'Measure, _> res
+
 
 type Row<[<Measure>] 'Measure, 'T>(values: array<'T>) =
     do if isNull values then

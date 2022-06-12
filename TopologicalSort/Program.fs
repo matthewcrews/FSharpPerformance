@@ -310,6 +310,33 @@ module Data =
                 |> Graph.create
             ]
             
+            
+    module Version12 =
+        
+        open TopologicalSort.Version12
+        
+        // Create a new random number generator with the same seed
+        let rng = Random rngSeed
+        
+        // Create the list of Nodes that we will use
+        let nodes =
+            [for i in 0 .. nodeCount - 1 ->
+                Node.create i]
+            
+        // Generate the random Graphs we will solve
+        let graphs =
+            [for _ in 1 .. graphCount ->
+                [|for sourceIdx in 0 .. nodeCount - 2 do
+                     // We use a weighted distribution for the number of edges
+                     for _ in 1 .. randomEdgeCount[(rng.Next randomEdgeCount.Length)] do
+                         let targetIdx = rng.Next (sourceIdx + 1, nodeCount - 1)
+                         let source = nodes[sourceIdx]
+                         let target = nodes[targetIdx]
+                         Edge.create source target |]
+                |> Array.distinct    
+                |> Graph.create
+            ]
+    
     
 [<MemoryDiagnoser>]
 [<HardwareCounters(
@@ -319,7 +346,7 @@ module Data =
 // [<DisassemblyDiagnoser>]
 type Benchmarks () =
     
-    [<Benchmark>]
+//   [<Benchmark>]
     member _.V01 () =
         let mutable result = None
         
@@ -330,7 +357,7 @@ type Benchmarks () =
 
         result        
         
-    [<Benchmark>]
+//   [<Benchmark>]
     member _.V02 () =
         let mutable result = None
         
@@ -341,7 +368,7 @@ type Benchmarks () =
 
         result  
         
-    [<Benchmark>]
+//   [<Benchmark>]
     member _.V03 () =
         let mutable result = None
         
@@ -352,7 +379,7 @@ type Benchmarks () =
 
         result  
         
-    // [<Benchmark>]
+//    [<Benchmark>]
     member _.V04 () =
         let mutable result = None
         
@@ -363,7 +390,7 @@ type Benchmarks () =
 
         result  
         
-    // [<Benchmark>]
+//    [<Benchmark>]
     member _.V05 () =
         let mutable result = None
         
@@ -374,7 +401,7 @@ type Benchmarks () =
 
         result  
 
-    // [<Benchmark>]
+//    [<Benchmark>]
     member _.V06 () =
         let mutable result = None
         
@@ -385,7 +412,7 @@ type Benchmarks () =
 
         result
         
-    // [<Benchmark>]
+//    [<Benchmark>]
     member _.V07 () =
         let mutable result = None
         
@@ -396,7 +423,7 @@ type Benchmarks () =
 
         result 
 
-    // [<Benchmark>]
+//    [<Benchmark>]
     member _.V08 () =
         let mutable result = None
         
@@ -407,7 +434,7 @@ type Benchmarks () =
 
         result
 
-    // [<Benchmark>]
+//    [<Benchmark>]
     member _.V09 () =
         let mutable result = None
         
@@ -418,7 +445,7 @@ type Benchmarks () =
 
         result
         
-    // [<Benchmark>]
+    [<Benchmark>]
     member _.V10 () =
         let mutable result = None
         
@@ -428,7 +455,8 @@ type Benchmarks () =
             result <- sortedOrder
 
         result
-    // [<Benchmark>]
+        
+//    [<Benchmark>]
     member _.V11 () =
         let mutable result = ValueNone
         
@@ -437,7 +465,18 @@ type Benchmarks () =
             let sortedOrder = Version11.Graph.GraphType.Sort &graph
             result <- sortedOrder
 
-        result 
+        result
+        
+    [<Benchmark>]
+    member _.V12 () =
+        let mutable result = None
+        
+        for graph in Data.Version12.graphs do
+            // I separate the assignment so I can set a breakpoint in debugging
+            let sortedOrder = Version12.sort graph
+            result <- sortedOrder
+
+        result
 
 let profile (version: string) loopCount =
     
@@ -512,6 +551,12 @@ let profile (version: string) loopCount =
             match b.V11 () with
             | ValueSome order -> result <- result + 1
             | ValueNone -> result <- result - 1
+            
+    | "v12" ->
+        for i in 1 .. loopCount do
+            match b.V12 () with
+            | Some order -> result <- result + 1
+            | None -> result <- result - 1
             
     | unknownVersion -> failwith $"Unknown version: {unknownVersion}" 
             

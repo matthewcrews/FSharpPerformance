@@ -1,21 +1,50 @@
-﻿module TopologicalSort.Version8
+﻿module TopologicalSort.Version12
 // Yeah, we're using pointers :)
 #nowarn "9"
 
 (*
-Version 8:
-We now use a different layout for Sources and Targets. Having all of the Edges
-in a single array will allow for better cache locality and reduce the number
-of Last Level Cache (LLC) Misses.
+Version 10:
+
 *)
 
 open System
 open System.Collections.Generic
 open System.Runtime.CompilerServices
 open FSharp.NativeInterop
-open Microsoft.CodeAnalysis.CSharp
 open Row
 
+     
+let inline stackalloc<'a when 'a: unmanaged> (length: int): Span<'a> =
+  let p = NativePtr.stackalloc<'a> length |> NativePtr.toVoidPtr
+  Span<'a>(p, length)
+     
+     
+[<Struct;IsByRefLike>]
+type StackStack<'T>(values: Span<'T>) =
+    [<DefaultValue>] val mutable private _count : int
+    
+    member s.Push v =
+        if s._count < values.Length then
+            values[s._count] <- v
+            s._count <- s._count + 1
+        else
+            failwith "Exceeded capacity of StackStack"
+        
+    member s.Pop () =
+        if s._count > 0 then
+            s._count <- s._count - 1
+            values[s._count]
+        else
+            failwith "Empty StackStack"
+            
+    member s.Count = s._count
+            
+    member s.ToArray () =
+        let newArray = GC.AllocateUninitializedArray s._count
+        for i in 0 .. newArray.Length - 1 do
+            newArray[i] <- values[i]
+        newArray
+        
 
 [<RequireQualifiedAccess>]
 module private Units =
@@ -243,49 +272,43 @@ module Graph =
 let sort (graph: Graph) =
     
     let sourceRanges = graph.SourceRanges
-    let sourceEdges = graph.SourceEdges
     let targetRanges = graph.TargetRanges
     let targetEdges = graph.TargetEdges
     
-    let toProcess = Stack<Node> (int sourceRanges.Length)
-    let sortedNodes = Queue<Node> (int sourceRanges.Length)
+    let result = GC.AllocateUninitializedArray (int sourceRanges.Length)
+    let mutable nextToProcessIdx = 0
+    let mutable resultCount = 0
+    
+    let mutable nodeId = 0<Units.Node>
+    
+    let sourceCounts = stackalloc<byte> (int targetRanges.Length)
+    
+    while nodeId < sourceRanges.Length do
+        sourceCounts[int nodeId] <- byte sourceRanges[nodeId].Length
+        if sourceCounts[int nodeId] = 0uy then
+            result[resultCount] <- nodeId
+            resultCount <- resultCount + 1
+        nodeId <- nodeId + 1<_>
 
     
-    sourceRanges
-    |> Bar.iteri (fun nodeId range ->
-        if range.Length = 0<Units.Index> then
-            toProcess.Push nodeId)
+    while nextToProcessIdx < result.Length && nextToProcessIdx < resultCount do
+
+        let targetRange = targetRanges[result[nextToProcessIdx]]
+        let mutable targetIndex = targetRange.Start
+        let bound = targetRange.Start + targetRange.Length
+        while targetIndex < bound do
+            let targetNodeId = Edge.getTarget targetEdges[targetIndex]
+            sourceCounts[int targetNodeId] <- sourceCounts[int targetNodeId] - 1uy
+            if sourceCounts[int targetNodeId] = 0uy then
+                result[resultCount] <- targetNodeId
+                resultCount <- resultCount + 1
+
+            targetIndex <- targetIndex + 1<Units.Index>
         
-    let remainingEdges = EdgeTracker (int sourceRanges.Length)
+        nextToProcessIdx <- nextToProcessIdx + 1
 
-    sourceEdges
-    |> Bar.iter remainingEdges.Add
-    
-    while toProcess.Count > 0 do
-        let nextNode = toProcess.Pop()
-        sortedNodes.Enqueue nextNode
 
-        targetRanges[nextNode]
-        |> Range.iter (fun targetIndex ->
-            let edgeToRemove = targetEdges[targetIndex]
-            remainingEdges.Remove edgeToRemove
-            
-            // Check if all of the Edges have been removed for this
-            // Target Node
-            let targetNodeId = Edge.getTarget edgeToRemove
-            let noRemainingSources =
-                sourceRanges[targetNodeId]
-                |> Range.forall (fun sourceIndex ->
-                    let sourceEdge = sourceEdges[sourceIndex]
-                    remainingEdges.Contains sourceEdge
-                    |> not
-                    )
-                
-            if noRemainingSources then
-                toProcess.Push targetNodeId
-            )
-
-    if remainingEdges.Count > 0 then
+    if resultCount < result.Length then
         None
     else
-        Some (sortedNodes.ToArray())
+        Some result
