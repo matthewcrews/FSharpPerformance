@@ -4,14 +4,15 @@
 
 (*
 Version 10:
-
+Instead of using a two separate StackStacks to track the remaining work,
+we use the result array and two counters to track which Nodes we still
+need to process and which ones have been added to the sorted output.
 *)
 
 open System
 open System.Collections.Generic
 open System.Runtime.CompilerServices
 open FSharp.NativeInterop
-open Microsoft.CodeAnalysis.CSharp
 open Row
 
      

@@ -4,7 +4,8 @@
 
 (*
 Version 12:
-Tracking the remaining inbound count instead of Edges
+Tracking the count of remaining inbound Edges instead of checking
+whether all of the incoming Edges have been removed.
 *)
 
 open System

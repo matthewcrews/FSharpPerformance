@@ -11,9 +11,6 @@ of Last Level Cache (LLC) Misses.
 
 open System
 open System.Collections.Generic
-open System.Runtime.CompilerServices
-open FSharp.NativeInterop
-open Microsoft.CodeAnalysis.CSharp
 open Row
 
 

@@ -4,14 +4,14 @@
 
 (*
 Version 9:
-
+We now use a Stack allocated on the Stack (StackStack) to track the
+Nodes that we need to process instead of a Stack and Queue on the heap.
 *)
 
 open System
 open System.Collections.Generic
 open System.Runtime.CompilerServices
 open FSharp.NativeInterop
-open Microsoft.CodeAnalysis.CSharp
 open Row
 
      
