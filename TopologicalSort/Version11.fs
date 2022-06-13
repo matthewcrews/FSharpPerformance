@@ -139,7 +139,7 @@ module Graph =
             )
         
         let values =
-            nodeData._Values
+            nodeData._values
             |> Array.concat
             |> Bar<Units.Index, _>
         
@@ -218,7 +218,7 @@ module Graph =
             let bitsRequired = ((sourceRangeLength * sourceRangeLength) + 63) / 64
             let remainingEdges = (GC.AllocateUninitializedArray bitsRequired)
             let remainingEdgesSpan = remainingEdges.AsSpan()
-            for edge in sourceEdges._Values do
+            for edge in sourceEdges._values do
                 GraphType.AddToTracker(remainingEdgesSpan, sourceRangeLength, edge)
             
             while nextToProcessIdx < result.Length && nextToProcessIdx < resultCount do
