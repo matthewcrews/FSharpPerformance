@@ -3,7 +3,7 @@
 #nowarn "9"
 
 (*
-Version 9:
+Version 10:
 
 *)
 
@@ -248,7 +248,7 @@ module Graph =
             )
         
         let values =
-            nodeData._Values
+            nodeData._values
             |> Array.concat
             |> Bar<Units.Index, _>
         

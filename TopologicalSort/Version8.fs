@@ -4,7 +4,9 @@
 
 (*
 Version 8:
-
+We now use a different layout for Sources and Targets. Having all of the Edges
+in a single array will allow for better cache locality and reduce the number
+of Last Level Cache (LLC) Misses.
 *)
 
 open System
@@ -216,7 +218,7 @@ module Graph =
             )
         
         let values =
-            nodeData._Values
+            nodeData._values
             |> Array.concat
             |> Bar<Units.Index, _>
         
