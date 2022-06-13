@@ -336,6 +336,58 @@ module Data =
                 |> Array.distinct    
                 |> Graph.create
             ]
+            
+    module Version13 =
+        
+        open TopologicalSort.Version13
+        
+        // Create a new random number generator with the same seed
+        let rng = Random rngSeed
+        
+        // Create the list of Nodes that we will use
+        let nodes =
+            [for i in 0 .. nodeCount - 1 ->
+                Node.create i]
+            
+        // Generate the random Graphs we will solve
+        let graphs =
+            [for _ in 1 .. graphCount ->
+                [|for sourceIdx in 0 .. nodeCount - 2 do
+                     // We use a weighted distribution for the number of edges
+                     for _ in 1 .. randomEdgeCount[(rng.Next randomEdgeCount.Length)] do
+                         let targetIdx = rng.Next (sourceIdx + 1, nodeCount - 1)
+                         let source = nodes[sourceIdx]
+                         let target = nodes[targetIdx]
+                         Edge.create source target |]
+                |> Array.distinct    
+                |> Graph.create
+            ]
+            
+    module Version14 =
+        
+        open TopologicalSort.Version14
+        
+        // Create a new random number generator with the same seed
+        let rng = Random rngSeed
+        
+        // Create the list of Nodes that we will use
+        let nodes =
+            [for i in 0 .. nodeCount - 1 ->
+                Node.create i]
+            
+        // Generate the random Graphs we will solve
+        let graphs =
+            [for _ in 1 .. graphCount ->
+                [|for sourceIdx in 0 .. nodeCount - 2 do
+                     // We use a weighted distribution for the number of edges
+                     for _ in 1 .. randomEdgeCount[(rng.Next randomEdgeCount.Length)] do
+                         let targetIdx = rng.Next (sourceIdx + 1, nodeCount - 1)
+                         let source = nodes[sourceIdx]
+                         let target = nodes[targetIdx]
+                         Edge.create source target |]
+                |> Array.distinct    
+                |> Graph.create
+            ]
     
     
 [<MemoryDiagnoser>]
@@ -477,6 +529,29 @@ type Benchmarks () =
             result <- sortedOrder
 
         result
+        
+    [<Benchmark>]
+    member _.V13 () =
+        let mutable result = None
+        
+        for graph in Data.Version13.graphs do
+            // I separate the assignment so I can set a breakpoint in debugging
+            let sortedOrder = Version13.sort graph
+            result <- sortedOrder
+
+        result
+        
+        
+    [<Benchmark>]
+    member _.V14 () =
+        let mutable result = None
+        
+        for graph in Data.Version14.graphs do
+            // I separate the assignment so I can set a breakpoint in debugging
+            let sortedOrder = Version14.sort graph
+            result <- sortedOrder
+
+        result
 
 let profile (version: string) loopCount =
     
@@ -555,6 +630,18 @@ let profile (version: string) loopCount =
     | "v12" ->
         for i in 1 .. loopCount do
             match b.V12 () with
+            | Some order -> result <- result + 1
+            | None -> result <- result - 1
+            
+    | "v13" ->
+        for i in 1 .. loopCount do
+            match b.V13 () with
+            | Some order -> result <- result + 1
+            | None -> result <- result - 1
+            
+    | "v14" ->
+        for i in 1 .. loopCount do
+            match b.V14 () with
             | Some order -> result <- result + 1
             | None -> result <- result - 1
             

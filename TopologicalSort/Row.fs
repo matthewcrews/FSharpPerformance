@@ -1,7 +1,9 @@
 ﻿module rec Row
 
+open System
 open System.Collections
 open System.Collections.Generic
+open System.Runtime.CompilerServices
 
 module private Helpers =
 
@@ -28,6 +30,26 @@ module private Helpers =
         
         newValues
 
+[<Struct;IsByRefLike>]
+type Segment<[<Measure>] 'Measure, 'T> internal (values: Span<'T>) =
+    
+    new (count, value) =
+        let newValues = Array.create count value
+        Segment<_,_> (newValues.AsSpan())
+        
+    /// WARNING: This member is not intended for public consumption
+    /// It is public to support inlining
+    member _._values = values
+    
+    member inline b.Length = LanguagePrimitives.Int32WithMeasure<'Measure> b._values.Length
+    
+    member b.Item
+        with inline get(i: int<'Measure>) =
+            b._values[int i]
+            
+    member b.Item
+        with inline get(i: byte<'Measure>) =
+            b._values[int (byte i)]
 
 [<Struct>]
 type Bar<[<Measure>] 'Measure, 'T> internal (values: 'T[]) =
@@ -38,17 +60,17 @@ type Bar<[<Measure>] 'Measure, 'T> internal (values: 'T[]) =
     
     /// WARNING: This member is not intended for public consumption
     /// It is public to support inlining
-    member _._Values = values
+    member _._values = values
     
-    member inline b.Length = LanguagePrimitives.Int32WithMeasure<'Measure> b._Values.Length
+    member inline b.Length = LanguagePrimitives.Int32WithMeasure<'Measure> b._values.Length
     
     member b.Item
         with inline get(i: int<'Measure>) =
-            b._Values[int i]
+            b._values[int i]
             
     member b.Item
         with inline get(i: byte<'Measure>) =
-            b._Values[int (byte i)]
+            b._values[int (byte i)]
             
             
 module Bar =
@@ -60,27 +82,17 @@ module Bar =
     
     [<CompiledName("Iterate")>]
     let inline iter ([<InlineIfLambda>] f: 'a -> unit) (row: Bar<'Measure, _>) =
-        let array = row._Values
+        let array = row._values
         for i = 0 to array.Length - 1 do
             let i = LanguagePrimitives.Int32WithMeasure<'Measure> i
             f array[int i]
     
     [<CompiledName("IterateIndexed")>]
     let inline iteri ([<InlineIfLambda>] f: int<'Measure> -> 'a -> unit) (row: Bar<'Measure, _>) =
-        let array = row._Values
+        let array = row._values
         for i = 0 to array.Length - 1 do
             let i = LanguagePrimitives.Int32WithMeasure<'Measure> i
             f i array[int i]
-
-//    [<CompiledName("Map")>]
-//    let inline map ([<InlineIfLambda>] f) (row: Bar<'Measure, _>) =
-//            let array = row._Values
-//            let res = Array.zeroCreate array.Length
-//
-//            for i = 0 to array.Length - 1 do
-//                res[i] <- f array[i]
-//            
-//            Bar<'Measure, _> res
 
 
 type Row<[<Measure>] 'Measure, 'T>(values: array<'T>) =
@@ -109,6 +121,13 @@ type Row<[<Measure>] 'Measure, 'T>(values: array<'T>) =
         and inline set (index: int<'Measure>) value =
             r.Values[int index] <- value
 
+    member r.Item
+        with inline get (i: byte<'Measure>) =
+            r.Values[int i]
+
+        and inline set (index: byte<'Measure>) value =
+            r.Values[int index] <- value
+    
     member _.Length = LanguagePrimitives.Int32WithMeasure<'Measure> values.Length
 
     member r.Bar = Bar<'Measure, _> r.Values

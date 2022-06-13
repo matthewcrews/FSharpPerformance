@@ -218,7 +218,7 @@ module Graph =
             )
         
         let values =
-            nodeData._Values
+            nodeData._values
             |> Array.concat
             |> Bar<Units.Index, _>
         

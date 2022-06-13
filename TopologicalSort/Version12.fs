@@ -247,7 +247,7 @@ module Graph =
             )
         
         let values =
-            nodeData._Values
+            nodeData._values
             |> Array.concat
             |> Bar<Units.Index, _>
         
@@ -279,19 +279,21 @@ let sort (graph: Graph) =
     let mutable nextToProcessIdx = 0
     let mutable resultCount = 0
     
-    let mutable nodeId = 0<Units.Node>
     
     let sourceCounts = stackalloc<uint> (int targetRanges.Length)
+    let mutable nodeId = 0<_>
     
+    // This is necessary due to the Span not being capture in a lambda
     while nodeId < sourceRanges.Length do
         sourceCounts[int nodeId] <- uint sourceRanges[nodeId].Length
+        result[resultCount] <- nodeId
         if sourceCounts[int nodeId] = 0u then
             result[resultCount] <- nodeId
             resultCount <- resultCount + 1
         nodeId <- nodeId + 1<_>
 
     
-    while nextToProcessIdx < result.Length && nextToProcessIdx < resultCount do
+    while nextToProcessIdx < resultCount do
 
         let targetRange = targetRanges[result[nextToProcessIdx]]
         let mutable targetIndex = targetRange.Start
@@ -299,11 +301,13 @@ let sort (graph: Graph) =
         while targetIndex < bound do
             let targetNodeId = Edge.getTarget targetEdges[targetIndex]
             sourceCounts[int targetNodeId] <- sourceCounts[int targetNodeId] - 1u
+            result[resultCount] <- targetNodeId
+            
             if sourceCounts[int targetNodeId] = 0u then
                 result[resultCount] <- targetNodeId
                 resultCount <- resultCount + 1
 
-            targetIndex <- targetIndex + 1<Units.Index>
+            targetIndex <- targetIndex + 1<_>
         
         nextToProcessIdx <- nextToProcessIdx + 1
 
