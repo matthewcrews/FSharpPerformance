@@ -67,6 +67,10 @@ type Bar<[<Measure>] 'Measure, 'T> internal (values: 'T[]) =
     member b.Item
         with inline get(i: int<'Measure>) =
             b._values[int i]
+        
+    member b.Item
+        with inline get(i: uint16<'Measure>) =
+            b._values[int i]
             
     member b.Item
         with inline get(i: byte<'Measure>) =
@@ -121,6 +125,13 @@ type Row<[<Measure>] 'Measure, 'T>(values: array<'T>) =
         and inline set (index: int<'Measure>) value =
             r.Values[int index] <- value
 
+    member r.Item
+        with inline get (i: uint16<'Measure>) =
+            r.Values[int i]
+
+        and inline set (index: uint16<'Measure>) value =
+            r.Values[int index] <- value
+    
     member r.Item
         with inline get (i: byte<'Measure>) =
             r.Values[int i]

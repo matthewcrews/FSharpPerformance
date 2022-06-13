@@ -3,8 +3,8 @@
 #nowarn "9"
 
 (*
-Version 10:
-
+Version 12:
+Tracking the remaining inbound count instead of Edges
 *)
 
 open System
