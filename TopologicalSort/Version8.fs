@@ -11,8 +11,42 @@ of Last Level Cache (LLC) Misses.
 
 open System
 open System.Collections.Generic
+open System.Runtime.CompilerServices
+open FSharp.NativeInterop
 open Row
 
+     
+let inline stackalloc<'a when 'a: unmanaged> (length: int): Span<'a> =
+  let p = NativePtr.stackalloc<'a> length |> NativePtr.toVoidPtr
+  Span<'a>(p, length)
+     
+     
+[<Struct; IsByRefLike>]
+type StackStack<'T>(values: Span<'T>) =
+    [<DefaultValue>] val mutable private _count : int
+    
+    member s.Push v =
+        if s._count < values.Length then
+            values[s._count] <- v
+            s._count <- s._count + 1
+        else
+            failwith "Exceeded capacity of StackStack"
+        
+    member s.Pop () =
+        if s._count > 0 then
+            s._count <- s._count - 1
+            values[s._count]
+        else
+            failwith "Empty StackStack"
+            
+    member s.Count = s._count
+            
+    member s.ToArray () =
+        let newArray = GC.AllocateUninitializedArray s._count
+        for i in 0 .. newArray.Length - 1 do
+            newArray[i] <- values[i]
+        newArray
+        
 
 [<RequireQualifiedAccess>]
 module private Units =
@@ -244,14 +278,19 @@ let sort (graph: Graph) =
     let targetRanges = graph.TargetRanges
     let targetEdges = graph.TargetEdges
     
-    let toProcess = Stack<Node> (int sourceRanges.Length)
-    let sortedNodes = Queue<Node> (int sourceRanges.Length)
-
+    let toProcessValues = stackalloc<Node> (int sourceRanges.Length)
+    let mutable toProcess = StackStack<Node> toProcessValues
     
-    sourceRanges
-    |> Bar.iteri (fun nodeId range ->
-        if range.Length = 0<Units.Index> then
-            toProcess.Push nodeId)
+    let sortedNodesValues = stackalloc<Node> (int sourceRanges.Length)
+    let mutable sortedNodes = StackStack<Node> sortedNodesValues
+    
+    let mutable nodeId = 0<Units.Node>
+    let bound = sourceRanges.Length
+    
+    while nodeId < bound do
+        if sourceRanges[nodeId].Length = 0<Units.Index> then
+            toProcess.Push nodeId
+        nodeId <- nodeId + 1<Units.Node>
         
     let remainingEdges = EdgeTracker (int sourceRanges.Length)
 
@@ -260,10 +299,12 @@ let sort (graph: Graph) =
     
     while toProcess.Count > 0 do
         let nextNode = toProcess.Pop()
-        sortedNodes.Enqueue nextNode
+        sortedNodes.Push nextNode
 
-        targetRanges[nextNode]
-        |> Range.iter (fun targetIndex ->
+        let targetRange = targetRanges[nextNode]
+        let mutable targetIndex = targetRange.Start
+        let bound = targetRange.Start + targetRange.Length
+        while targetIndex < bound do
             let edgeToRemove = targetEdges[targetIndex]
             remainingEdges.Remove edgeToRemove
             
@@ -280,7 +321,9 @@ let sort (graph: Graph) =
                 
             if noRemainingSources then
                 toProcess.Push targetNodeId
-            )
+
+            targetIndex <- targetIndex + 1<Units.Index>
+
 
     if remainingEdges.Count > 0 then
         None

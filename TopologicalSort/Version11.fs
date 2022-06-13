@@ -1,10 +1,23 @@
 ﻿module TopologicalSort.Version11
+// Yeah, we're using pointers :)
+#nowarn "9"
+
+(*
+Version 11:
+Tracking the count of remaining inbound Edges instead of checking
+whether all of the incoming Edges have been removed.
+*)
 
 open System
 open System.Collections.Generic
-open System.Numerics
-open System.Runtime.InteropServices
+open FSharp.NativeInterop
 open Row
+
+     
+let inline stackalloc<'a when 'a: unmanaged> (length: int): Span<'a> =
+  let p = NativePtr.stackalloc<'a> length |> NativePtr.toVoidPtr
+  Span<'a>(p, length)
+        
 
 [<RequireQualifiedAccess>]
 module private Units =
@@ -52,8 +65,54 @@ module Edge =
     let inline getTarget (edge: Edge) =
         int edge
         |> LanguagePrimitives.Int32WithMeasure<Units.Node>
-    
         
+
+type EdgeTracker (nodeCount: int) =
+    let bitsRequired = ((nodeCount * nodeCount) + 63) / 64
+    let values = Array.create bitsRequired 0UL
+    
+    // Public for the purposes of inlining
+    member b.NodeCount = nodeCount
+    member b.Values = values
+    
+    member inline b.Add (edge: Edge) =
+        let source = Edge.getSource edge
+        let target = Edge.getTarget edge
+        let location = (int source) * b.NodeCount + (int target)
+        let bucket = location >>> 6
+        let offset = location &&& 0x3F
+        let mask = 1UL <<< offset
+        b.Values[bucket] <- b.Values[bucket] ||| mask
+        
+    member inline b.Remove (edge: Edge) =
+        let source = Edge.getSource edge
+        let target = Edge.getTarget edge
+        let location = (int source) * b.NodeCount + (int target)
+        let bucket = location >>> 6
+        let offset = location &&& 0x3F
+        let mask = 1UL <<< offset
+        b.Values[bucket] <- b.Values[bucket] &&& ~~~mask
+
+    member inline b.Contains (edge: Edge) =
+        let source = Edge.getSource edge
+        let target = Edge.getTarget edge
+        let location = (int source) * b.NodeCount + (int target)
+        let bucket = location >>> 6
+        let offset = location &&& 0x3F
+        ((b.Values[bucket] >>> offset) &&& 1UL) = 1UL
+
+    member b.Clear () =
+        for i = 0 to b.Values.Length - 1 do
+            b.Values[i] <- 0UL
+
+    member b.Count =
+        let mutable count = 0
+        
+        for i = 0 to b.Values.Length - 1 do
+            count <- count + (System.Numerics.BitOperations.PopCount b.Values[i])
+
+        count
+
 [<Struct>]
 type Range =
     {
@@ -74,13 +133,35 @@ module Range =
             Length = length
         }
     
+    [<CompiledName("Iterate")>]
+    let inline iter ([<InlineIfLambda>] f: Index -> unit) (range: Range) =
+        let mutable i = range.Start
+        let bound = range.Start + range.Length
+
+        while i < bound do
+            f i
+            i <- i + LanguagePrimitives.Int32WithMeasure<Units.Index> 1
+            
+            
+    let inline forall ([<InlineIfLambda>] f: Index -> bool) (range: Range) =
+        let mutable result = true
+        let mutable i = range.Start
+        let bound = range.Start + range.Length
+
+        while i < bound && result do
+            result <- f i
+            i <- i + LanguagePrimitives.Int32WithMeasure<Units.Index> 1
+        
+        result
+            
+    
 
 type SourceRanges = Bar<Units.Node, Range>
 type SourceEdges = Bar<Units.Index, Edge>
 type TargetRanges = Bar<Units.Node, Range>
 type TargetEdges = Bar<Units.Index, Edge>
 
-[<Struct;StructLayout(LayoutKind.Sequential, Size=32)>]
+
 type Graph = {
     SourceRanges : SourceRanges
     SourceEdges : SourceEdges
@@ -160,96 +241,51 @@ module Graph =
             TargetEdges = targetNodes
         }        
 
+
+let sort (graph: Graph) =
     
-    type GraphType =
-        static member inline AddToTracker(tracker: Span<uint64>,nodeCount:int, edge: Edge) =
-            let source = Edge.getSource edge
-            let target = Edge.getTarget edge
-            let location = (int source) * nodeCount + (int target)
+    let sourceRanges = graph.SourceRanges
+    let targetRanges = graph.TargetRanges
+    let targetEdges = graph.TargetEdges
+    
+    let result = GC.AllocateUninitializedArray (int sourceRanges.Length)
+    let mutable nextToProcessIdx = 0
+    let mutable resultCount = 0
+    
+    
+    let sourceCounts = stackalloc<uint> (int targetRanges.Length)
+    let mutable nodeId = 0<_>
+    
+    // This is necessary due to the Span not being capture in a lambda
+    while nodeId < sourceRanges.Length do
+        sourceCounts[int nodeId] <- uint sourceRanges[nodeId].Length
+        result[resultCount] <- nodeId
+        if sourceCounts[int nodeId] = 0u then
+            result[resultCount] <- nodeId
+            resultCount <- resultCount + 1
+        nodeId <- nodeId + 1<_>
+
+    
+    while nextToProcessIdx < resultCount do
+
+        let targetRange = targetRanges[result[nextToProcessIdx]]
+        let mutable targetIndex = targetRange.Start
+        let bound = targetRange.Start + targetRange.Length
+        while targetIndex < bound do
+            let targetNodeId = Edge.getTarget targetEdges[targetIndex]
+            sourceCounts[int targetNodeId] <- sourceCounts[int targetNodeId] - 1u
+            result[resultCount] <- targetNodeId
             
-            let bucket = location >>> 6
-            let offset = location &&& 0x3F
-            let mask = 1UL <<< offset
-            tracker[bucket] <- tracker[bucket] ||| mask
+            if sourceCounts[int targetNodeId] = 0u then
+                result[resultCount] <- targetNodeId
+                resultCount <- resultCount + 1
+
+            targetIndex <- targetIndex + 1<_>
         
-        static member inline RemoveFromTracker(tracker: Span<uint64>, nodeCount: int, edge: Edge) =
-            let source = Edge.getSource edge
-            let target = Edge.getTarget edge
-            let location = (int source) * nodeCount + (int target)
-            let bucket = location >>> 6
-            let offset = location &&& 0x3F
-            let mask = 1UL <<< offset
-            tracker[bucket] <- tracker[bucket] &&& ~~~mask
-            target
-        
-        static member inline TrackerNotContains(tracker: Span<uint64>,nodeCount: int, edge: Edge) =
-            let source = Edge.getSource edge
-            let target = Edge.getTarget edge
-            let location = (int source) * nodeCount + (int target)
-            let bucket = location >>> 6
-            let offset = location &&& 0x3F
-            ((tracker[bucket] >>> offset) &&& 1UL) <> 1UL
-        
-        static member inline TrackerCount(tracker: Span<uint64>) =
-            let mutable count = 0
-            for i = 0 to tracker.Length - 1 do            
-                count <- count + (BitOperations.PopCount tracker[i])
-            count
-            
-            
-        static member Sort(graph: inref<Graph>) =
-            let sourceRanges = graph.SourceRanges
-            let sourceEdges = graph.SourceEdges
-            let targetRanges = graph.TargetRanges
-            let targetEdges = graph.TargetEdges
-            let sourceRangeLength = int sourceRanges.Length
-            let result = GC.AllocateUninitializedArray sourceRangeLength
-            let mutable nextToProcessIdx = 0
-            let mutable resultCount = 0
-            
-            let mutable nodeId = 0<Units.Node>
-            
-            while nodeId < sourceRanges.Length do
-                if sourceRanges[nodeId].Length = 0<Units.Index> then
-                    result[resultCount] <- nodeId
-                    resultCount <- resultCount + 1
-                nodeId <- nodeId + 1<Units.Node>
-            
-            let bitsRequired = ((sourceRangeLength * sourceRangeLength) + 63) / 64
-            let remainingEdges = (GC.AllocateUninitializedArray bitsRequired)
-            let remainingEdgesSpan = remainingEdges.AsSpan()
-            for edge in sourceEdges._values do
-                GraphType.AddToTracker(remainingEdgesSpan, sourceRangeLength, edge)
-            
-            while nextToProcessIdx < result.Length && nextToProcessIdx < resultCount do
-
-                let targetRange = targetRanges[result[nextToProcessIdx]]
-                let mutable targetIndex = targetRange.Start
-                let bound = targetRange.Start + targetRange.Length
-                while targetIndex < bound do
-                    // Check if all of the Edges have been removed for this
-                    // Target Node
-                    let targetNodeId = GraphType.RemoveFromTracker(remainingEdgesSpan, sourceRangeLength, targetEdges[targetIndex])
-                    
-                    let mutable noRemainingSourcesResult = true
-                    let range = sourceRanges[targetNodeId]
-                    let mutable sourceIndex = range.Start
-                    let bound = range.Start + range.Length
-
-                    while sourceIndex < bound && noRemainingSourcesResult do
-                        noRemainingSourcesResult <- GraphType.TrackerNotContains(remainingEdgesSpan, sourceRangeLength, sourceEdges[sourceIndex])
-                        sourceIndex <- sourceIndex + LanguagePrimitives.Int32WithMeasure<Units.Index> 1
-                                            
-                    if noRemainingSourcesResult then
-                        result[resultCount] <- targetNodeId
-                        resultCount <- resultCount + 1
-
-                    targetIndex <- targetIndex + 1<Units.Index>
-                
-                nextToProcessIdx <- nextToProcessIdx + 1
+        nextToProcessIdx <- nextToProcessIdx + 1
 
 
-            if GraphType.TrackerCount(remainingEdges) > 0 then
-                ValueNone
-            else
-                ValueSome result
+    if resultCount < result.Length then
+        None
+    else
+        Some result

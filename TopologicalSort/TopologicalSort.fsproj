@@ -18,7 +18,6 @@
     <Compile Include="Version10.fs" />
     <Compile Include="Version11.fs" />
     <Compile Include="Version12.fs" />
-    <Compile Include="Version13.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
   <ItemGroup>

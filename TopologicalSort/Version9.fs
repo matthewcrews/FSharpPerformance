@@ -4,8 +4,9 @@
 
 (*
 Version 9:
-We now use a Stack allocated on the Stack (StackStack) to track the
-Nodes that we need to process instead of a Stack and Queue on the heap.
+Instead of using a two separate StackStacks to track the remaining work,
+we use the result array and two counters to track which Nodes we still
+need to process and which ones have been added to the sorted output.
 *)
 
 open System
@@ -277,18 +278,16 @@ let sort (graph: Graph) =
     let targetRanges = graph.TargetRanges
     let targetEdges = graph.TargetEdges
     
-    let toProcessValues = stackalloc<Node> (int sourceRanges.Length)
-    let mutable toProcess = StackStack<Node> toProcessValues
-    
-    let sortedNodesValues = stackalloc<Node> (int sourceRanges.Length)
-    let mutable sortedNodes = StackStack<Node> sortedNodesValues
+    let result = GC.AllocateUninitializedArray (int sourceRanges.Length)
+    let mutable nextToProcessIdx = 0
+    let mutable resultCount = 0
     
     let mutable nodeId = 0<Units.Node>
-    let bound = sourceRanges.Length
     
-    while nodeId < bound do
+    while nodeId < sourceRanges.Length do
         if sourceRanges[nodeId].Length = 0<Units.Index> then
-            toProcess.Push nodeId
+            result[resultCount] <- nodeId
+            resultCount <- resultCount + 1
         nodeId <- nodeId + 1<Units.Node>
         
     let remainingEdges = EdgeTracker (int sourceRanges.Length)
@@ -296,35 +295,34 @@ let sort (graph: Graph) =
     sourceEdges
     |> Bar.iter remainingEdges.Add
     
-    while toProcess.Count > 0 do
-        let nextNode = toProcess.Pop()
-        sortedNodes.Push nextNode
+    while nextToProcessIdx < result.Length && nextToProcessIdx < resultCount do
 
-        let targetRange = targetRanges[nextNode]
+        let targetRange = targetRanges[result[nextToProcessIdx]]
         let mutable targetIndex = targetRange.Start
         let bound = targetRange.Start + targetRange.Length
         while targetIndex < bound do
-            let edgeToRemove = targetEdges[targetIndex]
-            remainingEdges.Remove edgeToRemove
+            remainingEdges.Remove targetEdges[targetIndex]
             
             // Check if all of the Edges have been removed for this
             // Target Node
-            let targetNodeId = Edge.getTarget edgeToRemove
+            let targetNodeId = Edge.getTarget targetEdges[targetIndex]
             let noRemainingSources =
                 sourceRanges[targetNodeId]
                 |> Range.forall (fun sourceIndex ->
-                    let sourceEdge = sourceEdges[sourceIndex]
-                    remainingEdges.Contains sourceEdge
+                    remainingEdges.Contains sourceEdges[sourceIndex]
                     |> not
                     )
                 
             if noRemainingSources then
-                toProcess.Push targetNodeId
+                result[resultCount] <- targetNodeId
+                resultCount <- resultCount + 1
 
             targetIndex <- targetIndex + 1<Units.Index>
+        
+        nextToProcessIdx <- nextToProcessIdx + 1
 
 
     if remainingEdges.Count > 0 then
         None
     else
-        Some (sortedNodes.ToArray())
+        Some result

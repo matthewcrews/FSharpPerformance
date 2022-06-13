@@ -1,16 +1,14 @@
 ﻿module TopologicalSort.Version12
-// Yeah, we're using pointers :)
+// This is so what we can use stackalloc without a warning
 #nowarn "9"
 
 (*
 Version 12:
-Tracking the count of remaining inbound Edges instead of checking
-whether all of the incoming Edges have been removed.
+Branchless
 *)
 
 open System
 open System.Collections.Generic
-open System.Runtime.CompilerServices
 open FSharp.NativeInterop
 open Row
 
@@ -18,33 +16,6 @@ open Row
 let inline stackalloc<'a when 'a: unmanaged> (length: int): Span<'a> =
   let p = NativePtr.stackalloc<'a> length |> NativePtr.toVoidPtr
   Span<'a>(p, length)
-     
-     
-[<Struct;IsByRefLike>]
-type StackStack<'T>(values: Span<'T>) =
-    [<DefaultValue>] val mutable private _count : int
-    
-    member s.Push v =
-        if s._count < values.Length then
-            values[s._count] <- v
-            s._count <- s._count + 1
-        else
-            failwith "Exceeded capacity of StackStack"
-        
-    member s.Pop () =
-        if s._count > 0 then
-            s._count <- s._count - 1
-            values[s._count]
-        else
-            failwith "Empty StackStack"
-            
-    member s.Count = s._count
-            
-    member s.ToArray () =
-        let newArray = GC.AllocateUninitializedArray s._count
-        for i in 0 .. newArray.Length - 1 do
-            newArray[i] <- values[i]
-        newArray
         
 
 [<RequireQualifiedAccess>]
@@ -77,69 +48,21 @@ module Node =
         LanguagePrimitives.Int32WithMeasure<Units.Node> i
 
 
-type Edge = int64<Units.Edge>
-
+[<Struct>]
+type Edge =
+    {
+        Source : Node
+        Target : Node
+    }
+    
 module Edge =
-
-    let inline create (source: Node) (target: Node) =
-        (((int64 source) <<< 32) ||| (int64 target))
-        |> LanguagePrimitives.Int64WithMeasure<Units.Edge>
-        
-    let inline getSource (edge: Edge) =
-        ((int64 edge) >>> 32)
-        |> int
-        |> LanguagePrimitives.Int32WithMeasure<Units.Node>
-
-    let inline getTarget (edge: Edge) =
-        int edge
-        |> LanguagePrimitives.Int32WithMeasure<Units.Node>
-        
-
-type EdgeTracker (nodeCount: int) =
-    let bitsRequired = ((nodeCount * nodeCount) + 63) / 64
-    let values = Array.create bitsRequired 0UL
     
-    // Public for the purposes of inlining
-    member b.NodeCount = nodeCount
-    member b.Values = values
-    
-    member inline b.Add (edge: Edge) =
-        let source = Edge.getSource edge
-        let target = Edge.getTarget edge
-        let location = (int source) * b.NodeCount + (int target)
-        let bucket = location >>> 6
-        let offset = location &&& 0x3F
-        let mask = 1UL <<< offset
-        b.Values[bucket] <- b.Values[bucket] ||| mask
-        
-    member inline b.Remove (edge: Edge) =
-        let source = Edge.getSource edge
-        let target = Edge.getTarget edge
-        let location = (int source) * b.NodeCount + (int target)
-        let bucket = location >>> 6
-        let offset = location &&& 0x3F
-        let mask = 1UL <<< offset
-        b.Values[bucket] <- b.Values[bucket] &&& ~~~mask
+    let create source target =
+        {
+            Source = source
+            Target = target
+        }
 
-    member inline b.Contains (edge: Edge) =
-        let source = Edge.getSource edge
-        let target = Edge.getTarget edge
-        let location = (int source) * b.NodeCount + (int target)
-        let bucket = location >>> 6
-        let offset = location &&& 0x3F
-        ((b.Values[bucket] >>> offset) &&& 1UL) = 1UL
-
-    member b.Clear () =
-        for i = 0 to b.Values.Length - 1 do
-            b.Values[i] <- 0UL
-
-    member b.Count =
-        let mutable count = 0
-        
-        for i = 0 to b.Values.Length - 1 do
-            count <- count + (System.Numerics.BitOperations.PopCount b.Values[i])
-
-        count
 
 [<Struct>]
 type Range =
@@ -160,41 +83,19 @@ module Range =
             Start = start
             Length = length
         }
-    
-    [<CompiledName("Iterate")>]
-    let inline iter ([<InlineIfLambda>] f: Index -> unit) (range: Range) =
-        let mutable i = range.Start
-        let bound = range.Start + range.Length
 
-        while i < bound do
-            f i
-            i <- i + LanguagePrimitives.Int32WithMeasure<Units.Index> 1
-            
-            
-    let inline forall ([<InlineIfLambda>] f: Index -> bool) (range: Range) =
-        let mutable result = true
-        let mutable i = range.Start
-        let bound = range.Start + range.Length
 
-        while i < bound && result do
-            result <- f i
-            i <- i + LanguagePrimitives.Int32WithMeasure<Units.Index> 1
-        
-        result
-            
-    
-
-type SourceRanges = Bar<Units.Node, Range>
-type SourceEdges = Bar<Units.Index, Edge>
 type TargetRanges = Bar<Units.Node, Range>
-type TargetEdges = Bar<Units.Index, Edge>
+type TargetNodes = Bar<Units.Index, Node>
+type SourceRanges = Bar<Units.Node, Range>
+type SourceNodes = Bar<Units.Index, Node>
 
 
 type Graph = {
-    SourceRanges : SourceRanges
-    SourceEdges : SourceEdges
     TargetRanges : TargetRanges
-    TargetEdges : TargetEdges
+    TargetNodes : TargetNodes
+    SourceRanges : SourceRanges
+    SourceNodes : SourceNodes
 }
     
 module Graph =
@@ -203,10 +104,8 @@ module Graph =
         let nodes = HashSet()
         
         for edge in edges do
-            let source = Edge.getSource edge
-            let target = Edge.getTarget edge
-            nodes.Add source |> ignore
-            nodes.Add target |> ignore
+            nodes.Add edge.Source |> ignore
+            nodes.Add edge.Target |> ignore
             
         LanguagePrimitives.Int32WithMeasure<Units.Node> nodes.Count
     
@@ -215,11 +114,8 @@ module Graph =
         let targetsAcc = Row.create nodeCount []
         
         for edge in edges do
-            let source = Edge.getSource edge
-            let target = Edge.getTarget edge
-            
-            sourcesAcc[target] <- edge :: sourcesAcc[target]
-            targetsAcc[source] <- edge :: targetsAcc[source]
+            sourcesAcc[edge.Target] <- edge.Source :: sourcesAcc[edge.Target]
+            targetsAcc[edge.Source] <- edge.Target :: targetsAcc[edge.Source]
             
         let finalSources =
             sourcesAcc
@@ -232,7 +128,7 @@ module Graph =
         finalSources.Bar, finalTargets.Bar
 
         
-    let private createIndexesAndValues (nodeData: Bar<'Measure, Edge[]>) =
+    let private createIndexesAndValues (nodeData: Bar<'Measure, Node[]>) =
         let ranges = Row.create nodeData.Length Range.Zero
         let mutable nextStartIndex = Index.create 0
         
@@ -264,9 +160,9 @@ module Graph =
         
         {
             SourceRanges = sourceRanges
-            SourceEdges = sourceNodes
+            SourceNodes = sourceNodes
             TargetRanges = targetRanges
-            TargetEdges = targetNodes
+            TargetNodes = targetNodes
         }        
 
 
@@ -274,23 +170,21 @@ let sort (graph: Graph) =
     
     let sourceRanges = graph.SourceRanges
     let targetRanges = graph.TargetRanges
-    let targetEdges = graph.TargetEdges
+    let targetNodes = graph.TargetNodes
     
     let result = GC.AllocateUninitializedArray (int sourceRanges.Length)
     let mutable nextToProcessIdx = 0
     let mutable resultCount = 0
     
-    
     let sourceCounts = stackalloc<uint> (int targetRanges.Length)
     let mutable nodeId = 0<_>
+    let bound = sourceRanges.Length
     
     // This is necessary due to the Span not being capture in a lambda
-    while nodeId < sourceRanges.Length do
+    while nodeId < bound do
         sourceCounts[int nodeId] <- uint sourceRanges[nodeId].Length
         result[resultCount] <- nodeId
-        if sourceCounts[int nodeId] = 0u then
-            result[resultCount] <- nodeId
-            resultCount <- resultCount + 1
+        resultCount <- resultCount + (# "ceq" sourceCounts[int nodeId] 0u : int #)
         nodeId <- nodeId + 1<_>
 
     
@@ -299,21 +193,18 @@ let sort (graph: Graph) =
         let targetRange = targetRanges[result[nextToProcessIdx]]
         let mutable targetIndex = targetRange.Start
         let bound = targetRange.Start + targetRange.Length
+        
         while targetIndex < bound do
-            let targetNodeId = Edge.getTarget targetEdges[targetIndex]
+            let targetNodeId = targetNodes[targetIndex]
             sourceCounts[int targetNodeId] <- sourceCounts[int targetNodeId] - 1u
             result[resultCount] <- targetNodeId
-            
-            if sourceCounts[int targetNodeId] = 0u then
-                result[resultCount] <- targetNodeId
-                resultCount <- resultCount + 1
-
+            resultCount <- resultCount + (# "ceq" sourceCounts[int targetNodeId] 0u : int #)
             targetIndex <- targetIndex + 1<_>
         
         nextToProcessIdx <- nextToProcessIdx + 1
 
 
-    if resultCount < result.Length then
-        None
-    else
+    if resultCount = result.Length then
         Some result
+    else
+        None
