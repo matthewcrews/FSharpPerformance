@@ -39,15 +39,15 @@ module Data =
             
         // Generate the random Graphs we will solve
         let graphs =
-            [for _ in 1 .. graphCount ->
-                [for sourceIdx in 0 .. nodeCount - 2 do
-                    // We use a weighted distribution for the number of edges
-                    for _ in 1 .. randomEdgeCount[(rng.Next randomEdgeCount.Length)] do
-                        let targetIdx = rng.Next (sourceIdx + 1, nodeCount - 1)
-                        { Source = nodes[sourceIdx]; Target = nodes[targetIdx] }]
-                |> List.distinct    
-                |> Graph
-            ]
+            [|for _ in 1 .. graphCount ->
+                 [for sourceIdx in 0 .. nodeCount - 2 do
+                     // We use a weighted distribution for the number of edges
+                     for _ in 1 .. randomEdgeCount[(rng.Next randomEdgeCount.Length)] do
+                         let targetIdx = rng.Next (sourceIdx + 1, nodeCount - 1)
+                         { Source = nodes[sourceIdx]; Target = nodes[targetIdx] }]
+                 |> List.distinct    
+                 |> Graph
+            |]
             
             
     module Version2 =
@@ -64,15 +64,15 @@ module Data =
             
         // Generate the random Graphs we will solve
         let graphs =
-            [for _ in 1 .. graphCount ->
-                [for sourceIdx in 0 .. nodeCount - 2 do
-                    // We use a weighted distribution for the number of edges
-                    for _ in 1 .. randomEdgeCount[(rng.Next randomEdgeCount.Length)] do
-                        let targetIdx = rng.Next (sourceIdx + 1, nodeCount - 1)
-                        { Source = nodes[sourceIdx]; Target = nodes[targetIdx] }]
-                |> List.distinct    
-                |> Graph.create
-            ]
+            [|for _ in 1 .. graphCount ->
+                 [for sourceIdx in 0 .. nodeCount - 2 do
+                     // We use a weighted distribution for the number of edges
+                     for _ in 1 .. randomEdgeCount[(rng.Next randomEdgeCount.Length)] do
+                         let targetIdx = rng.Next (sourceIdx + 1, nodeCount - 1)
+                         { Source = nodes[sourceIdx]; Target = nodes[targetIdx] }]
+                 |> List.distinct    
+                 |> Graph.create
+            |]
             
             
     module Version3 =
@@ -89,15 +89,15 @@ module Data =
             
         // Generate the random Graphs we will solve
         let graphs =
-            [for _ in 1 .. graphCount ->
-                [for sourceIdx in 0 .. nodeCount - 2 do
-                    // We use a weighted distribution for the number of edges
-                    for _ in 1 .. randomEdgeCount[(rng.Next randomEdgeCount.Length)] do
-                        let targetIdx = rng.Next (sourceIdx + 1, nodeCount - 1)
-                        { Source = nodes[sourceIdx]; Target = nodes[targetIdx] }]
-                |> List.distinct    
-                |> Graph.create
-            ]
+            [|for _ in 1 .. graphCount ->
+                 [for sourceIdx in 0 .. nodeCount - 2 do
+                     // We use a weighted distribution for the number of edges
+                     for _ in 1 .. randomEdgeCount[(rng.Next randomEdgeCount.Length)] do
+                         let targetIdx = rng.Next (sourceIdx + 1, nodeCount - 1)
+                         { Source = nodes[sourceIdx]; Target = nodes[targetIdx] }]
+                 |> List.distinct    
+                 |> Graph.create
+            |]
             
             
     module Version4 =
@@ -114,17 +114,17 @@ module Data =
             
         // Generate the random Graphs we will solve
         let graphs =
-            [for _ in 1 .. graphCount ->
-                [for sourceIdx in 0 .. nodeCount - 2 do
-                    // We use a weighted distribution for the number of edges
-                    for _ in 1 .. randomEdgeCount[(rng.Next randomEdgeCount.Length)] do
-                        let targetIdx = rng.Next (sourceIdx + 1, nodeCount - 1)
-                        let source = nodes[sourceIdx]
-                        let target = nodes[targetIdx]
-                        Edge.create source target ]
-                |> List.distinct    
-                |> Graph.create
-            ]
+            [|for _ in 1 .. graphCount ->
+                 [for sourceIdx in 0 .. nodeCount - 2 do
+                     // We use a weighted distribution for the number of edges
+                     for _ in 1 .. randomEdgeCount[(rng.Next randomEdgeCount.Length)] do
+                         let targetIdx = rng.Next (sourceIdx + 1, nodeCount - 1)
+                         let source = nodes[sourceIdx]
+                         let target = nodes[targetIdx]
+                         Edge.create source target ]
+                 |> List.distinct    
+                 |> Graph.create
+            |]
 
 
     module Version5 =
@@ -141,17 +141,17 @@ module Data =
             
         // Generate the random Graphs we will solve
         let graphs =
-            [for _ in 1 .. graphCount ->
-                [|for sourceIdx in 0 .. nodeCount - 2 do
-                     // We use a weighted distribution for the number of edges
-                     for _ in 1 .. randomEdgeCount[(rng.Next randomEdgeCount.Length)] do
-                         let targetIdx = rng.Next (sourceIdx + 1, nodeCount - 1)
-                         let source = nodes[sourceIdx]
-                         let target = nodes[targetIdx]
-                         Edge.create source target |]
-                |> Array.distinct    
-                |> Graph.create
-            ]
+            [|for _ in 1 .. graphCount ->
+                 [|for sourceIdx in 0 .. nodeCount - 2 do
+                      // We use a weighted distribution for the number of edges
+                      for _ in 1 .. randomEdgeCount[(rng.Next randomEdgeCount.Length)] do
+                          let targetIdx = rng.Next (sourceIdx + 1, nodeCount - 1)
+                          let source = nodes[sourceIdx]
+                          let target = nodes[targetIdx]
+                          Edge.create source target |]
+                 |> Array.distinct    
+                 |> Graph.create
+            |]
 
             
     module Version6 =
@@ -168,17 +168,17 @@ module Data =
             
         // Generate the random Graphs we will solve
         let graphs =
-            [for _ in 1 .. graphCount ->
-                [|for sourceIdx in 0 .. nodeCount - 2 do
-                     // We use a weighted distribution for the number of edges
-                     for _ in 1 .. randomEdgeCount[(rng.Next randomEdgeCount.Length)] do
-                         let targetIdx = rng.Next (sourceIdx + 1, nodeCount - 1)
-                         let source = nodes[sourceIdx]
-                         let target = nodes[targetIdx]
-                         Edge.create source target |]
-                |> Array.distinct    
-                |> Graph.create
-            ]
+            [|for _ in 1 .. graphCount ->
+                 [|for sourceIdx in 0 .. nodeCount - 2 do
+                      // We use a weighted distribution for the number of edges
+                      for _ in 1 .. randomEdgeCount[(rng.Next randomEdgeCount.Length)] do
+                          let targetIdx = rng.Next (sourceIdx + 1, nodeCount - 1)
+                          let source = nodes[sourceIdx]
+                          let target = nodes[targetIdx]
+                          Edge.create source target |]
+                 |> Array.distinct    
+                 |> Graph.create
+            |]
             
     module Version7 =
         
@@ -194,17 +194,17 @@ module Data =
             
         // Generate the random Graphs we will solve
         let graphs =
-            [for _ in 1 .. graphCount ->
-                [|for sourceIdx in 0 .. nodeCount - 2 do
-                     // We use a weighted distribution for the number of edges
-                     for _ in 1 .. randomEdgeCount[(rng.Next randomEdgeCount.Length)] do
-                         let targetIdx = rng.Next (sourceIdx + 1, nodeCount - 1)
-                         let source = nodes[sourceIdx]
-                         let target = nodes[targetIdx]
-                         Edge.create source target |]
-                |> Array.distinct    
-                |> Graph.create
-            ]
+            [|for _ in 1 .. graphCount ->
+                 [|for sourceIdx in 0 .. nodeCount - 2 do
+                      // We use a weighted distribution for the number of edges
+                      for _ in 1 .. randomEdgeCount[(rng.Next randomEdgeCount.Length)] do
+                          let targetIdx = rng.Next (sourceIdx + 1, nodeCount - 1)
+                          let source = nodes[sourceIdx]
+                          let target = nodes[targetIdx]
+                          Edge.create source target |]
+                 |> Array.distinct    
+                 |> Graph.create
+            |]
             
     module Version8 =
         
@@ -220,17 +220,17 @@ module Data =
             
         // Generate the random Graphs we will solve
         let graphs =
-            [for _ in 1 .. graphCount ->
-                [|for sourceIdx in 0 .. nodeCount - 2 do
-                     // We use a weighted distribution for the number of edges
-                     for _ in 1 .. randomEdgeCount[(rng.Next randomEdgeCount.Length)] do
-                         let targetIdx = rng.Next (sourceIdx + 1, nodeCount - 1)
-                         let source = nodes[sourceIdx]
-                         let target = nodes[targetIdx]
-                         Edge.create source target |]
-                |> Array.distinct    
-                |> Graph.create
-            ]
+            [|for _ in 1 .. graphCount ->
+                 [|for sourceIdx in 0 .. nodeCount - 2 do
+                      // We use a weighted distribution for the number of edges
+                      for _ in 1 .. randomEdgeCount[(rng.Next randomEdgeCount.Length)] do
+                          let targetIdx = rng.Next (sourceIdx + 1, nodeCount - 1)
+                          let source = nodes[sourceIdx]
+                          let target = nodes[targetIdx]
+                          Edge.create source target |]
+                 |> Array.distinct    
+                 |> Graph.create
+            |]
             
     module Version9 =
         
@@ -246,17 +246,17 @@ module Data =
             
         // Generate the random Graphs we will solve
         let graphs =
-            [for _ in 1 .. graphCount ->
-                [|for sourceIdx in 0 .. nodeCount - 2 do
-                     // We use a weighted distribution for the number of edges
-                     for _ in 1 .. randomEdgeCount[(rng.Next randomEdgeCount.Length)] do
-                         let targetIdx = rng.Next (sourceIdx + 1, nodeCount - 1)
-                         let source = nodes[sourceIdx]
-                         let target = nodes[targetIdx]
-                         Edge.create source target |]
-                |> Array.distinct    
-                |> Graph.create
-            ]
+            [|for _ in 1 .. graphCount ->
+                 [|for sourceIdx in 0 .. nodeCount - 2 do
+                      // We use a weighted distribution for the number of edges
+                      for _ in 1 .. randomEdgeCount[(rng.Next randomEdgeCount.Length)] do
+                          let targetIdx = rng.Next (sourceIdx + 1, nodeCount - 1)
+                          let source = nodes[sourceIdx]
+                          let target = nodes[targetIdx]
+                          Edge.create source target |]
+                 |> Array.distinct    
+                 |> Graph.create
+            |]
             
     module Version10 =
         
@@ -272,17 +272,17 @@ module Data =
             
         // Generate the random Graphs we will solve
         let graphs =
-            [for _ in 1 .. graphCount ->
-                [|for sourceIdx in 0 .. nodeCount - 2 do
-                     // We use a weighted distribution for the number of edges
-                     for _ in 1 .. randomEdgeCount[(rng.Next randomEdgeCount.Length)] do
-                         let targetIdx = rng.Next (sourceIdx + 1, nodeCount - 1)
-                         let source = nodes[sourceIdx]
-                         let target = nodes[targetIdx]
-                         Edge.create source target |]
-                |> Array.distinct    
-                |> Graph.create
-            ]
+            [|for _ in 1 .. graphCount ->
+                 [|for sourceIdx in 0 .. nodeCount - 2 do
+                      // We use a weighted distribution for the number of edges
+                      for _ in 1 .. randomEdgeCount[(rng.Next randomEdgeCount.Length)] do
+                          let targetIdx = rng.Next (sourceIdx + 1, nodeCount - 1)
+                          let source = nodes[sourceIdx]
+                          let target = nodes[targetIdx]
+                          Edge.create source target |]
+                 |> Array.distinct    
+                 |> Graph.create
+            |]
             
     module Version11 =
     
@@ -298,17 +298,17 @@ module Data =
             
         // Generate the random Graphs we will solve
         let graphs =
-            [for _ in 1 .. graphCount ->
-                [|for sourceIdx in 0 .. nodeCount - 2 do
-                     // We use a weighted distribution for the number of edges
-                     for _ in 1 .. randomEdgeCount[(rng.Next randomEdgeCount.Length)] do
-                         let targetIdx = rng.Next (sourceIdx + 1, nodeCount - 1)
-                         let source = nodes[sourceIdx]
-                         let target = nodes[targetIdx]
-                         Edge.create source target |]
-                |> Array.distinct    
-                |> Graph.create
-            ]
+            [|for _ in 1 .. graphCount ->
+                 [|for sourceIdx in 0 .. nodeCount - 2 do
+                      // We use a weighted distribution for the number of edges
+                      for _ in 1 .. randomEdgeCount[(rng.Next randomEdgeCount.Length)] do
+                          let targetIdx = rng.Next (sourceIdx + 1, nodeCount - 1)
+                          let source = nodes[sourceIdx]
+                          let target = nodes[targetIdx]
+                          Edge.create source target |]
+                 |> Array.distinct    
+                 |> Graph.create
+            |]
             
             
     module Version12 =
@@ -325,17 +325,17 @@ module Data =
             
         // Generate the random Graphs we will solve
         let graphs =
-            [for _ in 1 .. graphCount ->
-                [|for sourceIdx in 0 .. nodeCount - 2 do
-                     // We use a weighted distribution for the number of edges
-                     for _ in 1 .. randomEdgeCount[(rng.Next randomEdgeCount.Length)] do
-                         let targetIdx = rng.Next (sourceIdx + 1, nodeCount - 1)
-                         let source = nodes[sourceIdx]
-                         let target = nodes[targetIdx]
-                         Edge.create source target |]
-                |> Array.distinct    
-                |> Graph.create
-            ]
+            [|for _ in 1 .. graphCount ->
+                 [|for sourceIdx in 0 .. nodeCount - 2 do
+                      // We use a weighted distribution for the number of edges
+                      for _ in 1 .. randomEdgeCount[(rng.Next randomEdgeCount.Length)] do
+                          let targetIdx = rng.Next (sourceIdx + 1, nodeCount - 1)
+                          let source = nodes[sourceIdx]
+                          let target = nodes[targetIdx]
+                          Edge.create source target |]
+                 |> Array.distinct    
+                 |> Graph.create
+            |]
     
     
 [<MemoryDiagnoser>]
@@ -412,7 +412,7 @@ type Benchmarks () =
 
         result
         
-    [<Benchmark>]
+    // [<Benchmark>]
     member _.V07 () =
         let mutable result = None
         
@@ -423,7 +423,7 @@ type Benchmarks () =
 
         result 
 
-    [<Benchmark>]
+    // [<Benchmark>]
     member _.V08 () =
         let mutable result = None
         
@@ -434,7 +434,7 @@ type Benchmarks () =
 
         result
 
-    [<Benchmark>]
+    // [<Benchmark>]
     member _.V09 () =
         let mutable result = None
         
@@ -446,7 +446,7 @@ type Benchmarks () =
         result
 
         
-    [<Benchmark>]
+    // [<Benchmark>]
     member _.V10 () =
         let mutable result = ValueNone
         
@@ -457,7 +457,7 @@ type Benchmarks () =
 
         result
         
-    [<Benchmark>]
+    // [<Benchmark>]
     member _.V11 () =
         let mutable result = None
         
@@ -469,7 +469,7 @@ type Benchmarks () =
         result
         
         
-    [<Benchmark>]
+    // [<Benchmark>]
     member _.V12 () =
         let mutable result = None
         
@@ -479,7 +479,6 @@ type Benchmarks () =
             result <- sortedOrder
 
         result
-
 
 
 let profile (version: string) loopCount =
@@ -561,7 +560,6 @@ let profile (version: string) loopCount =
             match b.V12 () with
             | Some order -> result <- result + 1
             | None -> result <- result - 1
-
             
     | unknownVersion -> failwith $"Unknown version: {unknownVersion}" 
             

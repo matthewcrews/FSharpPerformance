@@ -1,6 +1,7 @@
 ﻿module TopologicalSort.Version12
 // This is so what we can use stackalloc without a warning
 #nowarn "9"
+#nowarn "42"
 
 (*
 Version 12:
@@ -90,7 +91,7 @@ type TargetNodes = Bar<Units.Index, Node>
 type SourceRanges = Bar<Units.Node, Range>
 type SourceNodes = Bar<Units.Index, Node>
 
-
+[<Struct>]
 type Graph = {
     TargetRanges : TargetRanges
     TargetNodes : TargetNodes

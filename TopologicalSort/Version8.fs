@@ -17,8 +17,8 @@ open Row
 
      
 let inline stackalloc<'a when 'a: unmanaged> (length: int): Span<'a> =
-  let p = NativePtr.stackalloc<'a> length |> NativePtr.toVoidPtr
-  Span<'a>(p, length)
+    let p = NativePtr.stackalloc<'a> length |> NativePtr.toVoidPtr
+    Span<'a>(p, length)
      
      
 [<Struct; IsByRefLike>]
@@ -290,7 +290,7 @@ let sort (graph: Graph) =
     while nodeId < bound do
         if sourceRanges[nodeId].Length = 0<Units.Index> then
             toProcess.Push nodeId
-        nodeId <- nodeId + 1<Units.Node>
+        nodeId <- nodeId + 1<_>
         
     let remainingEdges = EdgeTracker (int sourceRanges.Length)
 
@@ -322,7 +322,7 @@ let sort (graph: Graph) =
             if noRemainingSources then
                 toProcess.Push targetNodeId
 
-            targetIndex <- targetIndex + 1<Units.Index>
+            targetIndex <- targetIndex + 1<_>
 
 
     if remainingEdges.Count > 0 then

@@ -288,7 +288,7 @@ let sort (graph: Graph) =
         if sourceRanges[nodeId].Length = 0<Units.Index> then
             result[resultCount] <- nodeId
             resultCount <- resultCount + 1
-        nodeId <- nodeId + 1<Units.Node>
+        nodeId <- nodeId + 1<_>
         
     let remainingEdges = EdgeTracker (int sourceRanges.Length)
 
@@ -317,7 +317,7 @@ let sort (graph: Graph) =
                 result[resultCount] <- targetNodeId
                 resultCount <- resultCount + 1
 
-            targetIndex <- targetIndex + 1<Units.Index>
+            targetIndex <- targetIndex + 1<_>
         
         nextToProcessIdx <- nextToProcessIdx + 1
 

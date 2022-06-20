@@ -16,8 +16,8 @@ open Row
 
      
 let inline stackalloc<'a when 'a: unmanaged> (length: int): Span<'a> =
-  let p = NativePtr.stackalloc<'a> length |> NativePtr.toVoidPtr
-  Span<'a>(p, length)
+    let p = NativePtr.stackalloc<'a> length |> NativePtr.toVoidPtr
+    Span<'a>(p, length)
      
      
 [<Struct;IsByRefLike>]

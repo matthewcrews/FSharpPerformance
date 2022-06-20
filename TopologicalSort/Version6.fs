@@ -3,7 +3,7 @@
 (*
 Version 6:
 Instead of a HashSet for tracking the remaining Edges, we use
-a custom BitSetTracker. BitSetTracker is faster because indexing
+a custom EdgeTracker. EdgeTracker is faster because indexing
 into an array is faster than a HashSet contains check even though
 both of a complexity of O(1)
 *)

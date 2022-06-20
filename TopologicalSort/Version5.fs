@@ -1,5 +1,7 @@
 ﻿module TopologicalSort.Version5
 
+
+
 (*
 Version 5:
 We move away from using the F# list and instead use Row/Bar/Array.

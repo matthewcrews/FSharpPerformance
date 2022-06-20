@@ -162,6 +162,7 @@ type TargetRanges = Bar<Units.Node, Range>
 type TargetEdges = Bar<Units.Index, Edge>
 
 
+[<Struct>]
 type Graph = {
     SourceRanges : SourceRanges
     SourceEdges : SourceEdges
@@ -254,7 +255,7 @@ let sort (graph: Graph) =
     
     
     let sourceCounts = stackalloc<uint> (int targetRanges.Length)
-    let mutable nodeId = 0<_>
+    let mutable nodeId = 0<Units.Node>
     
     // This is necessary due to the Span not being capture in a lambda
     while nodeId < sourceRanges.Length do

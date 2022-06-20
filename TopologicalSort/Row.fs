@@ -30,7 +30,7 @@ module private Helpers =
         
         newValues
 
-[<Struct;IsByRefLike>]
+[<Struct; IsByRefLike>]
 type Segment<[<Measure>] 'Measure, 'T> internal (values: Span<'T>) =
     
     new (count, value) =

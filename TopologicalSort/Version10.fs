@@ -244,7 +244,7 @@ module Graph =
                         result[resultCount] <- targetNodeId
                         resultCount <- resultCount + 1
 
-                    targetIndex <- targetIndex + 1<Units.Index>
+                    targetIndex <- targetIndex + 1<_>
                 
                 nextToProcessIdx <- nextToProcessIdx + 1
 
