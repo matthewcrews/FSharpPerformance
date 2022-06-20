@@ -412,7 +412,7 @@ type Benchmarks () =
 
         result
         
-    // [<Benchmark>]
+    [<Benchmark>]
     member _.V07 () =
         let mutable result = None
         
@@ -423,7 +423,7 @@ type Benchmarks () =
 
         result 
 
-    // [<Benchmark>]
+    [<Benchmark>]
     member _.V08 () =
         let mutable result = None
         
@@ -434,7 +434,7 @@ type Benchmarks () =
 
         result
 
-    // [<Benchmark>]
+    [<Benchmark>]
     member _.V09 () =
         let mutable result = None
         
@@ -446,7 +446,7 @@ type Benchmarks () =
         result
 
         
-    // [<Benchmark>]
+    [<Benchmark>]
     member _.V10 () =
         let mutable result = ValueNone
         
@@ -457,7 +457,7 @@ type Benchmarks () =
 
         result
         
-    // [<Benchmark>]
+    [<Benchmark>]
     member _.V11 () =
         let mutable result = None
         
@@ -469,7 +469,7 @@ type Benchmarks () =
         result
         
         
-    // [<Benchmark>]
+    [<Benchmark>]
     member _.V12 () =
         let mutable result = None
         
