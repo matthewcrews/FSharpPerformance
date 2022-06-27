@@ -20,7 +20,7 @@ let inline stackalloc<'a when 'a: unmanaged> (length: int): Span<'a> =
     Span<'a>(p, length)
      
      
-[<Struct;IsByRefLike>]
+[<Struct; IsByRefLike>]
 type StackStack<'T>(values: Span<'T>) =
     [<DefaultValue>] val mutable private _count : int
     
@@ -45,6 +45,12 @@ type StackStack<'T>(values: Span<'T>) =
         for i in 0 .. newArray.Length - 1 do
             newArray[i] <- values[i]
         newArray
+
+
+module StackStack =
+
+    let inline create length =
+        StackStack (stackalloc<_> length)
         
 
 [<RequireQualifiedAccess>]
@@ -153,8 +159,8 @@ module Graph =
     
     let private createSourcesAndTargets (nodeCount: int) (edges: Edge[]) =
         let nodeCount = LanguagePrimitives.Int32WithMeasure<Units.Node> nodeCount
-        let sourcesAcc = Row.create nodeCount []
-        let targetsAcc = Row.create nodeCount []
+        let mutable sourcesAcc = Row.create nodeCount []
+        let mutable targetsAcc = Row.create nodeCount []
         
         for edge in edges do
             let source = Edge.getSource edge
@@ -188,11 +194,8 @@ let sort (graph: Graph) =
     let sources = graph.Sources
     let targets = graph.Targets
     
-    let toProcessValues = stackalloc<Node> (int graph.Sources.Length)
-    let mutable toProcess = StackStack<Node> toProcessValues
-    
-    let sortedNodesValues = stackalloc<Node> (int graph.Sources.Length)
-    let mutable sortedNodes = StackStack<Node> sortedNodesValues
+    let mutable toProcess = StackStack.create (int graph.Sources.Length)
+    let mutable sortedNodes = StackStack.create (int graph.Sources.Length)
 
     for i in 0 .. (int graph.Sources.Length) - 1 do
         let nodeId = LanguagePrimitives.Int32WithMeasure<Units.Node> i
