@@ -42,9 +42,10 @@ type StackStack<'T>(values: Span<'T>) =
             
     member s.ToArray () =
         let newArray = GC.AllocateUninitializedArray s._count
-        for i in 0 .. newArray.Length - 1 do
-            newArray[i] <- values[i]
-        newArray
+        values.Slice(0, s._count).CopyTo(newArray.AsSpan())
+        // for i in 0 .. newArray.Length - 1 do
+        //     newArray[i] <- values[i]
+        // newArray
 
 
 module StackStack =

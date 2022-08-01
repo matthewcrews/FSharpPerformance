@@ -182,7 +182,6 @@ module Range =
             i <- i + LanguagePrimitives.Int32WithMeasure<Units.Index> 1
         
         result
-            
     
 
 type SourceRanges = Bar<Units.Node, Range>

@@ -14,6 +14,8 @@ open FSharp.NativeInterop
 open Row
 
      
+let inline retype<'T,'U> (x: 'T) : 'U = (# "" x: 'U #)
+
 let inline stackalloc<'a when 'a: unmanaged> (length: int): Span<'a> =
   let p = NativePtr.stackalloc<'a> length |> NativePtr.toVoidPtr
   Span<'a>(p, length)
@@ -185,7 +187,7 @@ let sort (graph: Graph) =
     while nodeId < bound do
         sourceCounts[int nodeId] <- uint sourceRanges[nodeId].Length
         result[resultCount] <- nodeId
-        resultCount <- resultCount + (# "ceq" sourceCounts[int nodeId] 0u : int #)
+        resultCount <- resultCount + (retype (sourceCounts[int nodeId] = 0u))
         nodeId <- nodeId + 1<_>
 
     
@@ -199,7 +201,7 @@ let sort (graph: Graph) =
             let targetNodeId = targetNodes[targetIndex]
             sourceCounts[int targetNodeId] <- sourceCounts[int targetNodeId] - 1u
             result[resultCount] <- targetNodeId
-            resultCount <- resultCount + (# "ceq" sourceCounts[int targetNodeId] 0u : int #)
+            resultCount <- resultCount + (retype (sourceCounts[int targetNodeId] = 0u))
             targetIndex <- targetIndex + 1<_>
         
         nextToProcessIdx <- nextToProcessIdx + 1
