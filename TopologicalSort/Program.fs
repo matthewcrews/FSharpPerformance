@@ -434,7 +434,7 @@ type Benchmarks () =
 
         result
 
-    // [<Benchmark>]
+    [<Benchmark>]
     member _.V09 () =
         let mutable result = None
         
