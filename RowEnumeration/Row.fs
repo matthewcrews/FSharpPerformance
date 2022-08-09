@@ -4,25 +4,32 @@ open System.Collections.Generic
 
 [<Struct>]
 type RowEnumerator<[<Measure>] 'Measure, 'T> =
-    val mutable private currentIndex : int
-    val private row : Row<'Measure, 'T>
+    val mutable _currentIndex : int<'Measure>
+    val mutable _currentValue : 'T
+    val _values : 'T[]
 
     new (row: Row<'Measure, 'T>) =
         {
-            currentIndex = -1
-            row = row
+            _currentIndex = LanguagePrimitives.Int32WithMeasure<'Measure> -1
+            _currentValue = Unchecked.defaultof<'T>
+            _values = row._values
         }
         
-    member this.MoveNext () : bool =
-        if this.currentIndex + 1 < this.row._values.Length then
-            this.currentIndex <- this.currentIndex + 1
-            true
-        else
-            false
+    member inline this.MoveNext () : bool =
+        // let nextIndex = this._currentIndex + (LanguagePrimitives.Int32WithMeasure<'Measure> 1)
+        // let values = this._values
+        // if (int nextIndex) < values.Length then
+        //     this._currentIndex <- nextIndex
+        //     this._currentValue <- values[int nextIndex]
+        //     true
+        // else
+        //     false
+        this._currentIndex <- this._currentIndex + (LanguagePrimitives.Int32WithMeasure<'Measure> 1)
+        int this._currentIndex < this._values.Length
             
-    member this.Current : struct(int<'Measure> * 'T) =
-        let currentIndexWithMeasure = LanguagePrimitives.Int32WithMeasure<'Measure> this.currentIndex
-        currentIndexWithMeasure, this.row._values[int currentIndexWithMeasure]
+    member inline this.Current : struct(int<'Measure> * 'T) =
+        // this._currentIndex, this._currentValue
+        this._currentIndex, this._values[int this._currentIndex]
         
     // interface IEnumerator<struct(int<'Measure> * 'T)> with
     //     member this.MoveNext () : bool =
@@ -66,14 +73,14 @@ type Row<[<Measure>] 'Measure, 'T>(values: 'T[]) =
             r._values[int i] <- value
 
 
-    member inline r.Length = LanguagePrimitives.Int32WithMeasure<'Measure> r._values.Length
+    member r.Length : int<'Measure> = LanguagePrimitives.Int32WithMeasure<'Measure> r._values.Length
 
 
     override row.ToString () =
         $"Row %A{row._values}"
 
     
-    member this.GetEnumerator () = RowEnumerator<'Measure, 'T>(this)
+    member inline this.GetEnumerator () = RowEnumerator<'Measure, 'T>(this)
     
     // interface IEnumerable<struct (int<'Measure> * 'T)> with
     //     member this.GetEnumerator () : IEnumerator<struct (int<'Measure> * 'T)> =
