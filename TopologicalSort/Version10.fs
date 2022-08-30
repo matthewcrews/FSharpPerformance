@@ -80,7 +80,7 @@ type SourceEdges = Bar<Units.Index, Edge>
 type TargetRanges = Bar<Units.Node, Range>
 type TargetEdges = Bar<Units.Index, Edge>
 
-[<Struct;StructLayout(LayoutKind.Sequential, Size=32)>]
+[<Struct>]
 type Graph = {
     SourceRanges : SourceRanges
     SourceEdges : SourceEdges
@@ -238,7 +238,7 @@ module Graph =
 
                     while sourceIndex < bound && noRemainingSourcesResult do
                         noRemainingSourcesResult <- GraphType.TrackerNotContains(remainingEdgesSpan, sourceRangeLength, sourceEdges[sourceIndex])
-                        sourceIndex <- sourceIndex + LanguagePrimitives.Int32WithMeasure<Units.Index> 1
+                        sourceIndex <- sourceIndex + 1<_>
                                             
                     if noRemainingSourcesResult then
                         result[resultCount] <- targetNodeId

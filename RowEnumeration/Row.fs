@@ -1,17 +1,16 @@
 ﻿namespace rec RowEnumeration
 
-open System.Collections.Generic
 
 [<Struct>]
 type RowEnumerator<[<Measure>] 'Measure, 'T> =
-    val mutable _currentIndex : int<'Measure>
-    val mutable _currentValue : 'T
+    val mutable _currentIndex : int
+    // val mutable _currentValue : 'T
     val _values : 'T[]
 
     new (row: Row<'Measure, 'T>) =
         {
-            _currentIndex = LanguagePrimitives.Int32WithMeasure<'Measure> -1
-            _currentValue = Unchecked.defaultof<'T>
+            _currentIndex = -1
+            // _currentValue = Unchecked.defaultof<'T>
             _values = row._values
         }
         
@@ -24,12 +23,24 @@ type RowEnumerator<[<Measure>] 'Measure, 'T> =
         //     true
         // else
         //     false
-        this._currentIndex <- this._currentIndex + (LanguagePrimitives.Int32WithMeasure<'Measure> 1)
-        int this._currentIndex < this._values.Length
+        let values = this._values
+        this._currentIndex <- this._currentIndex + 1
+        this._currentIndex < values.Length
+        
+        // let values = this._values
+        // let result = (int this._currentIndex) + 1 < values.Length
+        // this._currentIndex <- this._currentIndex + (LanguagePrimitives.Int32WithMeasure<'Measure> (Helpers.retype result))
+        // this._currentValue <- values[(int this._currentIndex)]
+        // result
+
+        
+        
             
     member inline this.Current : struct(int<'Measure> * 'T) =
         // this._currentIndex, this._currentValue
-        this._currentIndex, this._values[int this._currentIndex]
+        let values = this._values
+        let curIndex = this._currentIndex
+        (LanguagePrimitives.Int32WithMeasure<'Measure> curIndex), values[curIndex]
         
     // interface IEnumerator<struct(int<'Measure> * 'T)> with
     //     member this.MoveNext () : bool =

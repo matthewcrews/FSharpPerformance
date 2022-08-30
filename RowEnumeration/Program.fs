@@ -8,10 +8,13 @@ open RowEnumeration
 
 [<Measure>] type Entity
 
-[<MemoryDiagnoser>]
+[<MemoryDiagnoser;
+  HardwareCounters(HardwareCounter.BranchInstructions,
+                   HardwareCounter.BranchMispredictions,
+                   HardwareCounter.CacheMisses)>]
 type Benchmarks () =
     
-    let arrValues = [|1..100|]
+    let arrValues = [|1..1000|]
     let rowValues = Row<Entity,_> arrValues
     
     
@@ -31,6 +34,16 @@ type Benchmarks () =
         
         for entityId, value in rowValues do
             acc <- acc + value
+            
+        acc
+        
+        
+    [<Benchmark>]
+    member _.RowIter () =
+        let mutable acc = 0
+        
+        rowValues
+        |> Row.iter (fun v -> acc <- acc + v)
             
         acc
         
