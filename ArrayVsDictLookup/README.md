@@ -10,10 +10,12 @@ AMD Ryzen 9 3900X, 1 CPU, 24 logical and 12 physical cores
   DefaultJob : .NET 6.0.6 (6.0.622.26707), X64 RyuJIT AVX2
 
 
-|           Method |        Mean |     Error |    StdDev |
-|----------------- |------------:|----------:|----------:|
-|      ArrayLookup |    522.6 ns |   2.80 ns |   2.62 ns |
-| DictionaryLookup |  4,007.6 ns |  21.00 ns |  19.64 ns |
-|       DictLookup |  9,723.4 ns |  27.59 ns |  25.81 ns |
-|        MapLookup | 33,333.2 ns | 235.59 ns | 196.73 ns |
+|                    Method |        Mean |     Error |    StdDev |
+|-------------------------- |------------:|----------:|----------:|
+|               ArrayLookup |    536.1 ns |   5.13 ns |   4.55 ns |
+|          DictionaryLookup |  4,118.3 ns |  50.85 ns |  45.07 ns |
+|  ReadOnlyDictionaryLookup |  5,654.2 ns |  69.17 ns |  61.32 ns |
+| ImmutableDictionaryLookup | 23,606.4 ns | 322.53 ns | 301.69 ns |
+|                DictLookup |  9,882.9 ns |  87.49 ns |  81.84 ns |
+|                 MapLookup | 32,307.9 ns | 180.76 ns | 150.94 ns |
 ```

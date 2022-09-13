@@ -1,5 +1,6 @@
 ﻿open System.Collections.ObjectModel
 open System.Collections.Generic
+open System.Collections.Immutable
 open BenchmarkDotNet.Attributes
 open BenchmarkDotNet.Running
 
@@ -21,6 +22,11 @@ type Benchmarks () =
         |> Array.map (fun x -> KeyValuePair (x, x))
         |> Dictionary
         |> ReadOnlyDictionary 
+
+    let immutableDictionaryData = 
+        arrData
+        |> Array.map (fun x -> KeyValuePair (x, x))
+        |> ImmutableDictionary.ToImmutableDictionary
 
     let dictData =
         arrData
@@ -63,6 +69,16 @@ type Benchmarks () =
         
         for k in lookups do
             acc <- acc + readOnlyDictionaryData[k]
+
+        acc
+
+    [<Benchmark>]
+    member _.ImmutableDictionaryLookup () =
+        
+        let mutable acc = 0
+        
+        for k in lookups do
+            acc <- acc + immutableDictionaryData[k]
 
         acc
 
