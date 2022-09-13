@@ -11,7 +11,7 @@ the nodes and a Stack to track which nodes to process next.
 *)
 
 open System.Collections.Generic
-open Row
+open Collections
 
 
 [<RequireQualifiedAccess>]
@@ -72,8 +72,8 @@ module Graph =
     
     let private createSourcesAndTargets (nodeCount: int) (edges: Edge[]) =
         let nodeCount = LanguagePrimitives.Int32WithMeasure<Units.Node> nodeCount
-        let sourcesAcc = Row.create nodeCount []
-        let targetsAcc = Row.create nodeCount []
+        let mutable sourcesAcc = Row.create nodeCount []
+        let mutable targetsAcc = Row.create nodeCount []
         
         for edge in edges do
             let source = Edge.getSource edge

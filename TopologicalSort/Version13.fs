@@ -1,4 +1,4 @@
-﻿module TopologicalSort.Version12
+﻿module TopologicalSort.Version13
 // This is so what we can use stackalloc without a warning
 #nowarn "9"
 #nowarn "42"
@@ -171,24 +171,31 @@ module Graph =
 
 let sort (graph: Graph) =
     
-    let sourceRanges = graph.SourceRanges
-    let targetRanges = graph.TargetRanges
-    let targetNodes = graph.TargetNodes
+    use sourceRanges = fixed graph.SourceRanges._values
+    use targetRanges = fixed graph.TargetRanges._values
+    use targetNodes = fixed graph.TargetNodes._values
     
-    let result = GC.AllocateUninitializedArray (int sourceRanges.Length)
+    let sourceRanges = NativeBar (sourceRanges, graph.SourceRanges.Length)
+    let targetRanges = NativeBar (targetRanges, graph.SourceRanges.Length)
+    let targetNodes = NativeBar (targetNodes, graph.TargetNodes.Length)
+    
+    
+    let resultArray = GC.AllocateUninitializedArray (int sourceRanges.Length)
+    use resultPtr = fixed resultArray
+    let mutable result = NativeArray (resultPtr, resultArray.Length)
     let mutable nextToProcessIdx = 0
     let mutable resultCount = 0
     
-    let sourceCounts = stackalloc<uint> (int targetRanges.Length)
+    let sourceCountData = NativePtr.stackalloc<uint> (int targetRanges.Length)
+    let mutable sourceCounts = NativeArray (sourceCountData, int targetRanges.Length)
     let mutable nodeId = 0<_>
+    let bound = sourceRanges.Length
     
     // This is necessary due to the Span not being capture in a lambda
-    while nodeId < sourceRanges.Length do
+    while nodeId < bound do
         sourceCounts[int nodeId] <- uint sourceRanges[nodeId].Length
         result[resultCount] <- nodeId
-        
-        let inc = retype (sourceCounts[int nodeId] = 0u)
-        resultCount <- resultCount + inc
+        resultCount <- resultCount + (retype (sourceCounts[int nodeId] = 0u))
         nodeId <- nodeId + 1<_>
 
     
@@ -202,16 +209,13 @@ let sort (graph: Graph) =
             let targetNodeId = targetNodes[targetIndex]
             sourceCounts[int targetNodeId] <- sourceCounts[int targetNodeId] - 1u
             result[resultCount] <- targetNodeId
-            
-            let inc = retype (sourceCounts[int targetNodeId] = 0u)
-            resultCount <- resultCount + inc
-
+            resultCount <- resultCount + (retype (sourceCounts[int targetNodeId] = 0u))
             targetIndex <- targetIndex + 1<_>
         
         nextToProcessIdx <- nextToProcessIdx + 1
 
 
-    if resultCount = result.Length then
-        ValueSome result
+    if resultCount = resultArray.Length then
+        ValueSome resultArray
     else
         ValueNone

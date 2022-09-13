@@ -5,7 +5,7 @@
     <Platform>x64</Platform>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Row.fs" />
+    <Compile Include="Collections.fs" />
     <Compile Include="Version1.fs" />
     <Compile Include="Version2.fs" />
     <Compile Include="Version3.fs" />
@@ -18,6 +18,7 @@
     <Compile Include="Version10.fs" />
     <Compile Include="Version11.fs" />
     <Compile Include="Version12.fs" />
+    <Compile Include="Version13.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
   <ItemGroup>

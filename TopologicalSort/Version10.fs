@@ -4,7 +4,7 @@ open System
 open System.Collections.Generic
 open System.Numerics
 open System.Runtime.InteropServices
-open Row
+open Collections
 
 [<RequireQualifiedAccess>]
 module private Units =
@@ -102,8 +102,8 @@ module Graph =
         LanguagePrimitives.Int32WithMeasure<Units.Node> nodes.Count
     
     let private createSourcesAndTargets (nodeCount: int<Units.Node>) (edges: Edge[]) =
-        let sourcesAcc = Row.create nodeCount []
-        let targetsAcc = Row.create nodeCount []
+        let mutable sourcesAcc = Row.create nodeCount []
+        let mutable targetsAcc = Row.create nodeCount []
         
         for edge in edges do
             let source = Edge.getSource edge
@@ -124,7 +124,7 @@ module Graph =
 
         
     let private createIndexesAndValues (nodeData: Bar<'Measure, Edge[]>) =
-        let ranges = Row.create nodeData.Length Range.Zero
+        let mutable ranges = Row.create nodeData.Length Range.Zero
         let mutable nextStartIndex = Index.create 0
         
         nodeData
