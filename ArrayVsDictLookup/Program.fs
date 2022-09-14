@@ -3,7 +3,15 @@ open System.Collections.Generic
 open System.Collections.Immutable
 open BenchmarkDotNet.Attributes
 open BenchmarkDotNet.Running
+open FSharp.HashCollections
+open System.Runtime.CompilerServices
 
+type [<Struct>] IntComparer = 
+    [<MethodImpl(MethodImplOptions.AggressiveInlining)>] member this.Equals(i:int, i2: int) = i = i2 
+    [<MethodImpl(MethodImplOptions.AggressiveInlining)>]  member this.GetHashCode(i) = i.GetHashCode()
+    interface IEqualityComparer<int> with
+        member this.Equals(i, i2) = i = i2
+        member this.GetHashCode(i) = this.GetHashCode(i)
 
 type Benchmarks () =
 
@@ -37,6 +45,10 @@ type Benchmarks () =
         arrData
         |> Array.map (fun x -> x, x)
         |> Map
+
+    let fSharpHashMapData : HashMap<int, int, IntComparer>  =
+        arrData
+        |> Array.fold (fun s t -> s |> HashMap.add t t) HashMap.emptyWithComparer
 
     let lookups =
         [|for _ in 1 .. lookupCount -> rng.Next itemCount|]
@@ -102,6 +114,15 @@ type Benchmarks () =
 
         acc
 
+    [<Benchmark>]
+    member _.FSharpHashMapLookup () =
+        
+        let mutable acc = 0
+        
+        for k in lookups do
+            acc <- acc + (fSharpHashMapData |> HashMap.tryFind k).Value
+
+        acc
 
 [<EntryPoint>]
 let main (args: string[]) =
