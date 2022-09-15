@@ -13,6 +13,7 @@
   <ItemGroup>
     <PackageReference Include="argu" Version="6.1.1" />
     <PackageReference Include="benchmarkdotnet" Version="0.13.2" />
+    <PackageReference Include="FSharp.HashCollections" Version="0.3.1" />
   </ItemGroup>
 
 </Project>
