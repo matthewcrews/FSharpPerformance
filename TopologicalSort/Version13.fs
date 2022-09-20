@@ -1,4 +1,4 @@
-﻿module TopologicalSort.Version12
+﻿module TopologicalSort.Version13
 // This is so what we can use stackalloc without a warning
 #nowarn "9"
 #nowarn "42"
@@ -88,10 +88,10 @@ module Range =
         }
 
 
-type TargetRanges = Bar<Units.Node, Range>
-type TargetNodes = Bar<Units.Index, Node>
-type SourceRanges = Bar<Units.Node, Range>
-type SourceNodes = Bar<Units.Index, Node>
+type TargetRanges = NativeBar<Units.Node, Range>
+type TargetNodes = NativeBar<Units.Index, Node>
+type SourceRanges = NativeBar<Units.Node, Range>
+type SourceNodes = NativeBar<Units.Index, Node>
 
 [<Struct>]
 type Graph = {
@@ -158,8 +158,19 @@ module Graph =
         let nodeCount = getNodeCount edges
         let nodeSources, nodeTargets = createSourcesAndTargets nodeCount edges
         
-        let sourceRanges, sourceNodes = createIndexesAndValues nodeSources
-        let targetRanges, targetNodes = createIndexesAndValues nodeTargets
+        let sourceRangesValues, sourceNodesValues = createIndexesAndValues nodeSources
+        let targetRangesValues, targetNodesValues = createIndexesAndValues nodeTargets
+        
+        let inline createNativeBar (b: Bar<'Measure, _>) =
+            let newArr = GC.AllocateArray(b._values.Length, pinned = true)
+            Array.Copy (b._values, newArr, newArr.Length)
+            use newArrPtr = fixed newArr
+            NativeBar (newArrPtr, b.Length)
+        
+        let sourceRanges = createNativeBar sourceRangesValues
+        let sourceNodes = createNativeBar sourceNodesValues
+        let targetRanges = createNativeBar targetRangesValues
+        let targetNodes = createNativeBar targetNodesValues
         
         {
             SourceRanges = sourceRanges

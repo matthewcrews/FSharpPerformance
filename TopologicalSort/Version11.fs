@@ -260,10 +260,11 @@ let sort (graph: Graph) =
     // This is necessary due to the Span not being capture in a lambda
     while nodeId < sourceRanges.Length do
         sourceCounts[int nodeId] <- uint sourceRanges[nodeId].Length
-        result[resultCount] <- nodeId
+
         if sourceCounts[int nodeId] = 0u then
             result[resultCount] <- nodeId
             resultCount <- resultCount + 1
+
         nodeId <- nodeId + 1<_>
 
     

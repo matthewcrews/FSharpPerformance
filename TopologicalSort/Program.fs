@@ -9,8 +9,8 @@ open TopologicalSort
 module Data =
 
     let nodeCount = 20
-    let graphCount = 1_000
-    let rngSeed = 123
+    let graphCount = 500
+    let rngSeed = 999
     let randomEdgeCount =
         [|
             1
@@ -337,17 +337,43 @@ module Data =
                  |> Array.distinct    
                  |> Graph.create
             |]
+            
+    module Version13 =
+        
+        open TopologicalSort.Version13
+        
+        // Create a new random number generator with the same seed
+        let rng = Random rngSeed
+        
+        // Create the list of Nodes that we will use
+        let nodes =
+            [for i in 0 .. nodeCount - 1 ->
+                Node.create i]
+            
+        // Generate the random Graphs we will solve
+        let graphs =
+            [|for _ in 1 .. graphCount ->
+                 [|for sourceIdx in 0 .. nodeCount - 2 do
+                      // We use a weighted distribution for the number of edges
+                      for _ in 1 .. randomEdgeCount[(rng.Next randomEdgeCount.Length)] do
+                          let targetIdx = rng.Next (sourceIdx + 1, nodeCount - 1)
+                          let source = nodes[sourceIdx]
+                          let target = nodes[targetIdx]
+                          Edge.create source target |]
+                 |> Array.distinct    
+                 |> Graph.create
+            |]
   
   
 [<MemoryDiagnoser>]
 [<HardwareCounters(
-   HardwareCounter.BranchMispredictions,
-   HardwareCounter.BranchInstructions,
+//    HardwareCounter.BranchMispredictions,
+//    HardwareCounter.BranchInstructions,
    HardwareCounter.CacheMisses)>]
-[<DisassemblyDiagnoser>]
+// [<DisassemblyDiagnoser(printSource=true, exportCombinedDisassemblyReport=true, exportHtml=true, exportGithubMarkdown=true, printInstructionAddresses=true, maxDepth=3)>]
 type Benchmarks () =
     
-   [<Benchmark>]
+   // [<Benchmark>]
     member _.V01 () =
         let mutable result = None
         
@@ -358,7 +384,7 @@ type Benchmarks () =
    
         result        
         
-   [<Benchmark>]
+   // [<Benchmark>]
     member _.V02 () =
         let mutable result = None
         
@@ -369,7 +395,7 @@ type Benchmarks () =
    
         result  
         
-   [<Benchmark>]
+   // [<Benchmark>]
     member _.V03 () =
         let mutable result = None
         
@@ -380,7 +406,7 @@ type Benchmarks () =
    
         result  
         
-    [<Benchmark>]
+    // [<Benchmark>]
     member _.V04 () =
         let mutable result = None
         
@@ -391,7 +417,7 @@ type Benchmarks () =
    
         result  
         
-    [<Benchmark>]
+    // [<Benchmark>]
     member _.V05 () =
         let mutable result = None
         
@@ -402,7 +428,7 @@ type Benchmarks () =
    
         result  
    
-    [<Benchmark>]
+    // [<Benchmark>]
     member _.V06 () =
         let mutable result = None
         
@@ -413,7 +439,7 @@ type Benchmarks () =
    
         result
         
-    [<Benchmark>]
+    // [<Benchmark>]
     member _.V07 () =
         let mutable result = None
         
@@ -424,7 +450,7 @@ type Benchmarks () =
    
         result 
    
-    [<Benchmark>]
+    // [<Benchmark>]
     member _.V08 () =
         let mutable result = None
         
@@ -435,7 +461,7 @@ type Benchmarks () =
    
         result
    
-    [<Benchmark>]
+    // [<Benchmark>]
     member _.V09 () =
         let mutable result = None
         
@@ -447,7 +473,7 @@ type Benchmarks () =
         result
    
         
-    [<Benchmark>]
+    // [<Benchmark>]
     member _.V10 () =
         let mutable result = ValueNone
         
@@ -458,7 +484,7 @@ type Benchmarks () =
    
         result
 
-    [<Benchmark>]
+    // [<Benchmark>]
     member _.V11 () =
         let mutable result = None
         
@@ -476,6 +502,17 @@ type Benchmarks () =
         for graph in Data.Version12.graphs do
             // I separate the assignment so I can set a breakpoint in debugging
             let sortedOrder = Version12.sort graph
+            result <- sortedOrder
+    
+        result
+        
+    [<Benchmark>]
+    member _.V13 () =
+        let mutable result = ValueNone
+        
+        for graph in Data.Version13.graphs do
+            // I separate the assignment so I can set a breakpoint in debugging
+            let sortedOrder = Version13.sort graph
             result <- sortedOrder
     
         result
@@ -559,6 +596,12 @@ let profile (version: string) loopCount =
     | "v12" ->
         for i in 1 .. loopCount do
             match b.V12 () with
+            | ValueSome order -> result <- result + 1
+            | ValueNone -> result <- result - 1
+    
+    | "v13" ->
+        for i in 1 .. loopCount do
+            match b.V13 () with
             | ValueSome order -> result <- result + 1
             | ValueNone -> result <- result - 1
     
