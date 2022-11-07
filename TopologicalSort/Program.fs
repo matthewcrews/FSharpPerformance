@@ -9,7 +9,7 @@ open TopologicalSort
 module Data =
 
     let nodeCount = 20
-    let graphCount = 500
+    let graphCount = 1_000
     let rngSeed = 999
     let randomEdgeCount =
         [|
@@ -367,9 +367,9 @@ module Data =
   
 [<MemoryDiagnoser>]
 [<HardwareCounters(
-//    HardwareCounter.BranchMispredictions,
-//    HardwareCounter.BranchInstructions,
-   HardwareCounter.CacheMisses)>]
+    HardwareCounter.BranchMispredictions,
+    HardwareCounter.BranchInstructions,
+    HardwareCounter.CacheMisses)>]
 // [<DisassemblyDiagnoser(printSource=true, exportCombinedDisassemblyReport=true, exportHtml=true, exportGithubMarkdown=true, printInstructionAddresses=true, maxDepth=3)>]
 type Benchmarks () =
     

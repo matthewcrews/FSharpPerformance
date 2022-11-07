@@ -88,10 +88,10 @@ module Range =
         }
 
 
-type TargetRanges = NativeBar<Units.Node, Range>
-type TargetNodes = NativeBar<Units.Index, Node>
-type SourceRanges = NativeBar<Units.Node, Range>
-type SourceNodes = NativeBar<Units.Index, Node>
+type TargetRanges = Bar<Units.Node, Range>
+type TargetNodes = Bar<Units.Index, Node>
+type SourceRanges = Bar<Units.Node, Range>
+type SourceNodes = Bar<Units.Index, Node>
 
 [<Struct>]
 type Graph = {
@@ -161,11 +161,12 @@ module Graph =
         let sourceRangesValues, sourceNodesValues = createIndexesAndValues nodeSources
         let targetRangesValues, targetNodesValues = createIndexesAndValues nodeTargets
         
-        let inline createNativeBar (b: Bar<'Measure, _>) =
+        let inline createNativeBar (b: Bar<'Measure, 'a>) =
             let newArr = GC.AllocateArray(b._values.Length, pinned = true)
             Array.Copy (b._values, newArr, newArr.Length)
-            use newArrPtr = fixed newArr
-            NativeBar (newArrPtr, b.Length)
+            Bar<'Measure, 'a> newArr
+            // use newArrPtr = fixed newArr
+            // NativeBar (newArrPtr, b.Length)
         
         let sourceRanges = createNativeBar sourceRangesValues
         let sourceNodes = createNativeBar sourceNodesValues
@@ -182,9 +183,22 @@ module Graph =
 
 let sort (graph: Graph) =
     
-    let sourceRanges = graph.SourceRanges
-    let targetRanges = graph.TargetRanges
-    let targetNodes = graph.TargetNodes
+    // let sourceRanges = graph.SourceRanges
+    // let targetRanges = graph.TargetRanges
+    // let targetNodes = graph.TargetNodes
+    
+    
+    let sourceRanges =
+        use sourceRangesPtr = fixed graph.SourceRanges._values
+        NativeBar (sourceRangesPtr, graph.SourceRanges.Length)
+    
+    let targetRanges =
+        use targetRangesPtr = fixed graph.TargetRanges._values
+        NativeBar (targetRangesPtr, graph.TargetRanges.Length)
+    
+    let targetNodes =
+        use targetNodesPtr = fixed graph.TargetNodes._values
+        NativeBar (targetNodesPtr, graph.TargetNodes.Length)
     
     let result = GC.AllocateUninitializedArray (int sourceRanges.Length)
     let mutable nextToProcessIdx = 0
