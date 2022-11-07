@@ -1,4 +1,4 @@
-﻿module TopologicalSort.Version12
+﻿module TopologicalSort.Version13
 // This is so what we can use stackalloc without a warning
 #nowarn "9"
 #nowarn "42"
@@ -158,8 +158,20 @@ module Graph =
         let nodeCount = getNodeCount edges
         let nodeSources, nodeTargets = createSourcesAndTargets nodeCount edges
         
-        let sourceRanges, sourceNodes = createIndexesAndValues nodeSources
-        let targetRanges, targetNodes = createIndexesAndValues nodeTargets
+        let sourceRangesValues, sourceNodesValues = createIndexesAndValues nodeSources
+        let targetRangesValues, targetNodesValues = createIndexesAndValues nodeTargets
+        
+        let inline createNativeBar (b: Bar<'Measure, 'a>) =
+            let newArr = GC.AllocateArray(b._values.Length, pinned = true)
+            Array.Copy (b._values, newArr, newArr.Length)
+            Bar<'Measure, 'a> newArr
+            // use newArrPtr = fixed newArr
+            // NativeBar (newArrPtr, b.Length)
+        
+        let sourceRanges = createNativeBar sourceRangesValues
+        let sourceNodes = createNativeBar sourceNodesValues
+        let targetRanges = createNativeBar targetRangesValues
+        let targetNodes = createNativeBar targetNodesValues
         
         {
             SourceRanges = sourceRanges
@@ -171,9 +183,22 @@ module Graph =
 
 let sort (graph: Graph) =
     
-    let sourceRanges = graph.SourceRanges
-    let targetRanges = graph.TargetRanges
-    let targetNodes = graph.TargetNodes
+    // let sourceRanges = graph.SourceRanges
+    // let targetRanges = graph.TargetRanges
+    // let targetNodes = graph.TargetNodes
+    
+    
+    let sourceRanges =
+        use sourceRangesPtr = fixed graph.SourceRanges._values
+        NativeBar (sourceRangesPtr, graph.SourceRanges.Length)
+    
+    let targetRanges =
+        use targetRangesPtr = fixed graph.TargetRanges._values
+        NativeBar (targetRangesPtr, graph.TargetRanges.Length)
+    
+    let targetNodes =
+        use targetNodesPtr = fixed graph.TargetNodes._values
+        NativeBar (targetNodesPtr, graph.TargetNodes.Length)
     
     let result = GC.AllocateUninitializedArray (int sourceRanges.Length)
     let mutable nextToProcessIdx = 0

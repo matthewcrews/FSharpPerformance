@@ -1,5 +1,7 @@
 ﻿module rec TopologicalSort.Collections
 
+#nowarn "9"
+
 open System
 open System.Collections
 open System.Collections.Generic
@@ -39,6 +41,10 @@ type NativeBar<[<Measure>] 'Measure, 'T when 'T : unmanaged> (ptr: nativeptr<'T>
     member x.Item
         with inline get (n: int<'Measure>) = NativePtr.get x.Ptr (int n)
     member x.Length = len
+    
+    // static member ofBar<'T when 'T: unmanaged> (b: Bar<_,'T>) =
+    //     use ptr = fixed (b._values)
+    //     NativeBar (ptr, b._values.Length)
 
 
 [<Struct>]
