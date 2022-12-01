@@ -4,37 +4,64 @@ open BenchmarkDotNet.Diagnosers
 open BenchmarkDotNet.Attributes
 open BenchmarkDotNet.Running
 
-type ILookup<'K, 'V> =
-    abstract member Item : 'K -> 'V
+[<AbstractClass>]
+type AbstractLookup<'TKey, 'TValue>() =
+    abstract member Item : 'TKey -> 'TValue
 
-type FLookup<'K, 'V> = ('K -> 'V)
+type ILookup<'TKey, 'TValue> =
+    abstract member Item : 'TKey -> 'TValue
+
+type FuncLookup<'TKey, 'TValue> = ('TKey -> 'TValue)
+
+type ArrayLookup<'TValue>(values: 'TValue[]) =
+    inherit AbstractLookup<int, 'TValue>()
+    override _.Item (k: int) = values[k]
+
+let valueCount = 10_000
+let lookups = [|0..5..valueCount - 1|]
+
+module ExternalFunction =
+    let private fArrValues = [|0..valueCount|]
+    let funcLookup : FuncLookup<_,_> = fun k -> fArrValues[k]
+
 
 
 [<MemoryDiagnoser>]
+[<DisassemblyDiagnoser(printSource = true, filters = [||])>]
 [<HardwareCounters(
     HardwareCounter.BranchMispredictions,
     HardwareCounter.BranchInstructions,
     HardwareCounter.CacheMisses)>]
 type Benchmarks () =
-    let valueCount = 10_000
-    let lookups = [|0..5..valueCount - 1|]
     let arrValues = [|0..valueCount|]
+    let arrayLookupValues = [|0..valueCount|]
     let iArrValues = [|0..valueCount|]
     let fArrValues = [|0..valueCount|]
+
+    let arrayLookup = ArrayLookup arrayLookupValues
 
     let iLookup = { new ILookup<_, _> with
         member _.Item k = iArrValues[k]
     }
 
-    let fLookup : FLookup<_,_> = fun k -> fArrValues[k]
+    let funcLookup : FuncLookup<_,_> = fun k -> fArrValues[k]
 
 
     [<Benchmark>]
-    member _.Array () =
+    member _.ConcreteArray () =
         let mutable acc = 0
 
         for i in lookups do
             acc <- acc + arrValues[i]
+
+        acc
+
+    [<Benchmark>]
+    member _.AbstractClass () =
+        let mutable acc = 0
+
+        for i in lookups do
+            acc <- acc + arrayLookup[i]
 
         acc
 
@@ -52,10 +79,18 @@ type Benchmarks () =
         let mutable acc = 0
 
         for i in lookups do
-            acc <- acc + fLookup i
+            acc <- acc + funcLookup i
 
         acc
+        
+    [<Benchmark>]
+    member _.ExternalFunction () =
+        let mutable acc = 0
 
+        for i in lookups do
+            acc <- acc + ExternalFunction.funcLookup i
+
+        acc
 
 [<RequireQualifiedAccess>]
 type Args =

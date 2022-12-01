@@ -13,6 +13,7 @@ open System.Collections.Generic
 open FSharp.NativeInterop
 open Collections
 
+5 >>> 1
      
 let inline retype<'T,'U> (x: 'T) : 'U = (# "" x: 'U #)
 

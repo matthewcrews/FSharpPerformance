@@ -1,4 +1,6 @@
 ﻿module TopologicalSort.Version13
+
+open System.Runtime.InteropServices
 // This is so what we can use stackalloc without a warning
 #nowarn "9"
 #nowarn "42"
@@ -7,6 +9,20 @@
 Version 12:
 Branchless
 *)
+
+[<Struct>]
+type Case =
+    | A
+    | B
+    | C
+
+[<Struct>]
+[<StructLayout(LayoutKind.Explicit)>]
+type StructDU =
+    {
+        [<FieldOffset(00)>] Payload: int // Inlined in StructDU
+        [<FieldOffset(32)>] Case : Case
+    }
 
 open System
 open System.Collections.Generic

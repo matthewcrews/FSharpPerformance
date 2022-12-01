@@ -3,9 +3,6 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net6.0</TargetFramework>
-    <Platform>x64</Platform>
-    <DebugType>embedded</DebugType>
-    <!-- <DebugSymbols>true</DebugSymbols> -->
   </PropertyGroup>
 
   <ItemGroup>
@@ -13,9 +10,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="argu" Version="6.1.1" />
     <PackageReference Include="benchmarkdotnet" Version="0.13.2" />
-    <PackageReference Include="benchmarkdotnet.diagnostics.windows" Version="0.13.2" />
   </ItemGroup>
 
 </Project>
