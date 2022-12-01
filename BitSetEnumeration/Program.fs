@@ -1,4 +1,5 @@
 ﻿open System
+open System.Collections.Generic
 open Argu
 open BenchmarkDotNet.Attributes
 open BenchmarkDotNet.Running
@@ -14,11 +15,20 @@ type Benchmarks() =
 
     let rng = Random 123
     let capacity = 100
-    let setBitCount = 20
+    let setBitCount = 10
 
     let randomSetBitPositions =
         [| for _ in 1..setBitCount -> (rng.Next capacity) * 1<Chicken> |]
 
+    
+    let hashset =
+        let h = HashSet()
+        for randomBit in randomSetBitPositions do
+            h.Add randomBit |> ignore
+            
+        h
+            
+    
     let iteriBitSet =
         let b = Iter.BitSet<Chicken> capacity
 
@@ -34,14 +44,6 @@ type Benchmarks() =
             b.Add randomBit
 
         b
-
-    let structEnumerableBitSet =
-        let b = StructEnumerable.BitSet capacity
-
-        for randomBit in randomSetBitPositions do
-            b.Add randomBit
-
-        b
         
     let duckTypingBitSet =
         let b = DuckTyping.BitSet capacity
@@ -51,7 +53,23 @@ type Benchmarks() =
 
         b
 
+    let inliningBitSet =
+        let b = Inlining.BitSet capacity
 
+        for randomBit in randomSetBitPositions do
+            b.Add randomBit
+
+        b
+    
+    [<Benchmark>]
+    member _.HashSet () =
+        let mutable acc = 0<_>
+        
+        for x in hashset do
+            acc <- acc + x
+            
+        acc
+        
     [<Benchmark>]
     member _.Iter() =
         let mutable acc = 0<_>
@@ -70,19 +88,19 @@ type Benchmarks() =
         acc
 
     [<Benchmark>]
-    member _.StructEnumerable() =
+    member _.DuckTyping() =
         let mutable acc = 0<_>
 
-        for x in structEnumerableBitSet do
+        for x in duckTypingBitSet do
             acc <- acc + x
 
         acc
         
     [<Benchmark>]
-    member _.DuckTyping() =
+    member _.Inlining() =
         let mutable acc = 0<_>
 
-        for x in duckTypingBitSet do
+        for x in inliningBitSet do
             acc <- acc + x
 
         acc
@@ -97,15 +115,18 @@ let profile (benchmark: string) (iterations: int) =
     | "iter" ->
         for _ in 1 .. iterations do
             acc <- acc + b.Iter()
+
     | "enumerable" ->
         for _ in 1 .. iterations do
             acc <- acc + b.Enumerable()
-    | "structenumerable" ->
-        for _ in 1 .. iterations do
-            acc <- acc + b.StructEnumerable()
+
     | "ducktyping" ->
         for _ in 1 .. iterations do
             acc <- acc + b.DuckTyping()
+            
+    | "inlining" ->
+        for _ in 1 .. iterations do
+            acc <- acc + b.Inlining()
             
     | _ -> failwith "Unknown benchmark"
 

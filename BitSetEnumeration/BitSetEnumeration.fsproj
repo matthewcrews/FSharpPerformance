@@ -7,16 +7,17 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Include="Iter.fs"/>
-        <Compile Include="Enumerable.fs"/>
-        <Compile Include="StructEnumerable.fs"/>
-        <Compile Include="DuckTyping.fs"/>
-        <Compile Include="Program.fs"/>
+        <Compile Include="Iter.fs" />
+        <Compile Include="Enumerable.fs" />
+<!--        <Compile Include="StructEnumerable.fs" />-->
+        <Compile Include="DuckTyping.fs" />
+        <Compile Include="Inlining.fs" />
+        <Compile Include="Program.fs" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="argu" Version="6.1.1"/>
-        <PackageReference Include="benchmarkdotnet" Version="0.13.2"/>
+        <PackageReference Include="argu" Version="6.1.1" />
+        <PackageReference Include="benchmarkdotnet" Version="0.13.2" />
     </ItemGroup>
 
 </Project>

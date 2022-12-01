@@ -12,6 +12,7 @@ module private Helpers =
         bucket, mask
 
 
+[<Struct>]
 type BitSet<[<Measure>] 'Measure>(buckets: uint64[]) =
 
     new(capacity: int) =
@@ -19,13 +20,11 @@ type BitSet<[<Measure>] 'Measure>(buckets: uint64[]) =
         let buckets: uint64[] = Array.zeroCreate bucketsRequired
         BitSet<_> buckets
 
-
     /// WARNING: Public for inlining
     member _._buckets = buckets
     member _.Capacity = buckets.Length * 64
-    member _.Values: ReadOnlySpan<uint64> = ReadOnlySpan buckets
 
-    member inline b.Count =
+    member b.Count =
         let mutable total = 0
 
         for bucket in b._buckets do
@@ -33,16 +32,12 @@ type BitSet<[<Measure>] 'Measure>(buckets: uint64[]) =
 
         total
 
-    member inline b.Item
+    member b.Item
         with get (itemKey: int<'Measure>) =
             let bucketId, mask = Helpers.computeBucketAndMask itemKey
             let buckets = b._buckets
             let bucket = buckets[bucketId]
             (bucket &&& mask) <> 0UL
-
-    member b.Clear() =
-        for i = 0 to b._buckets.Length - 1 do
-            b._buckets[ i ] <- 0UL
 
     member b.Contains(itemKey: int<'Measure>) =
         let bucketId, mask = Helpers.computeBucketAndMask itemKey
@@ -60,6 +55,10 @@ type BitSet<[<Measure>] 'Measure>(buckets: uint64[]) =
         let buckets = b._buckets
         let bucket = buckets[bucketId]
         buckets[bucketId] <- bucket &&& ~~~mask
+
+    member b.Clear() =
+        for i = 0 to b._buckets.Length - 1 do
+            b._buckets[ i ] <- 0UL
 
 
 module BitSet =

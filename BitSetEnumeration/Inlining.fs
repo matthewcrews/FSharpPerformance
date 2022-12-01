@@ -1,8 +1,7 @@
-﻿module BitSetEnumeration.Enumerable
-
+﻿module rec BitSetEnumeration.Inlining
 
 open System
-open System.Collections.Generic
+open Microsoft.FSharp.Core
 
 module private Helpers =
 
@@ -14,51 +13,58 @@ module private Helpers =
         bucket, mask
 
 
+[<Struct>]
+type BitSetEnumerator<[<Measure>] 'Measure> =
+    val mutable BucketIdx: int
+    val mutable CurBucket: uint64
+    val mutable CurItem: int<'Measure>
+    val Buckets: uint64[]
 
-type BitSetEnumerator<[<Measure>] 'Measure>(buckets: uint64[]) =
-    let mutable bucketIdx = 0
-    let mutable curBucket = 0UL
-    let mutable curItem = LanguagePrimitives.Int32WithMeasure<'Measure> -1
+    new(buckets: uint64[]) =
+        {
+            BucketIdx = 0
+            CurBucket = 0UL
+            CurItem = LanguagePrimitives.Int32WithMeasure<'Measure> -1
+            Buckets = buckets
+        }
 
-    member _.Reset() =
-        bucketIdx <- 0
-        curBucket <- 0UL
-        curItem <- LanguagePrimitives.Int32WithMeasure<'Measure> -1
-
-    member _.Current =
-        if curItem < 0<_> then
+    member inline b.Current =
+        if b.CurItem < 0<_> then
             raise (InvalidOperationException "Enumeration has not started. Call MoveNext.")
         else
-            curItem
+            b.CurItem
 
-    member b.MoveNext() =
+    member inline b.MoveNext() =
         // Check if we have actually started iteration
-        if curItem < 0<_> then
-            curBucket <- buckets[bucketIdx]
+        if b.CurItem < 0<_> then
+            b.CurBucket <- b.Buckets[b.BucketIdx]
 
         // There are still items in the Current bucket we should return
-        if curBucket <> 0UL then
-            let r = System.Numerics.BitOperations.TrailingZeroCount curBucket
-            curItem <- LanguagePrimitives.Int32WithMeasure<'Measure>((bucketIdx <<< 6) + r)
-            curBucket <- curBucket ^^^ (1UL <<< r)
+        if b.CurBucket <> 0UL then
+            let r = System.Numerics.BitOperations.TrailingZeroCount b.CurBucket
+            b.CurItem <- LanguagePrimitives.Int32WithMeasure<'Measure>((b.BucketIdx <<< 6) + r)
+            b.CurBucket <- b.CurBucket ^^^ (1UL <<< r)
             true
 
         // We need to move to the next bucket of items
         else
-            bucketIdx <- bucketIdx + 1
-
-            if bucketIdx < buckets.Length then
-                curBucket <- buckets[bucketIdx]
-                b.MoveNext()
-            else
-                false
-
-    interface IEnumerator<int<'Measure>> with
-        member b.Current = b.Current :> Object
-        member b.Current = b.Current
-        member b.MoveNext() = b.MoveNext()
-        member b.Reset() = b.Reset()
-        member b.Dispose() = ()
+            b.BucketIdx <- b.BucketIdx + 1
+            let mutable result = false
+            
+            while b.BucketIdx < b.Buckets.Length && (not result) do
+                b.CurBucket <- b.Buckets[b.BucketIdx]
+                
+                // There are still items in the Current bucket we should return
+                if b.CurBucket <> 0UL then
+                    let r = System.Numerics.BitOperations.TrailingZeroCount b.CurBucket
+                    b.CurItem <- LanguagePrimitives.Int32WithMeasure<'Measure>((b.BucketIdx <<< 6) + r)
+                    b.CurBucket <- b.CurBucket ^^^ (1UL <<< r)
+                    result <- true
+                
+                if not result then
+                    b.BucketIdx <- b.BucketIdx + 1
+            
+            result
 
 
 [<Struct>]
@@ -111,9 +117,4 @@ type BitSet<[<Measure>] 'Measure>(buckets: uint64[]) =
         let bucket = buckets[bucketId]
         buckets[bucketId] <- bucket &&& ~~~mask
 
-    interface System.Collections.IEnumerable with
-        member b.GetEnumerator() =
-            (new BitSetEnumerator<'Measure>(buckets)) :> System.Collections.IEnumerator
-
-    interface IEnumerable<int<'Measure>> with
-        member s.GetEnumerator() = new BitSetEnumerator<'Measure>(buckets)
+    member b.GetEnumerator() = BitSetEnumerator<'Measure>(buckets)

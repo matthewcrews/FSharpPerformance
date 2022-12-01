@@ -1,6 +1,7 @@
-﻿module BitSetEnumeration.DuckTyping
+﻿module rec BitSetEnumeration.DuckTyping
 
 open System
+open Microsoft.FSharp.Core
 
 module private Helpers =
 
@@ -14,10 +15,10 @@ module private Helpers =
 
 [<Struct>]
 type BitSetEnumerator<[<Measure>] 'Measure> =
-    val mutable private BucketIdx: int
-    val mutable private CurBucket: uint64
-    val mutable private CurItem: int<'Measure>
-    val private Buckets: uint64[]
+    val mutable BucketIdx: int
+    val mutable CurBucket: uint64
+    val mutable CurItem: int<'Measure>
+    val Buckets: uint64[]
 
     new(buckets: uint64[]) =
         {
@@ -33,7 +34,7 @@ type BitSetEnumerator<[<Measure>] 'Measure> =
         else
             b.CurItem
 
-    member b.MoveNext() =
+    member inline b.MoveNext() =
         // Check if we have actually started iteration
         if b.CurItem < 0<_> then
             b.CurBucket <- b.Buckets[b.BucketIdx]
@@ -56,6 +57,7 @@ type BitSetEnumerator<[<Measure>] 'Measure> =
                 false
 
 
+[<Struct>]
 type BitSet<[<Measure>] 'Measure>(buckets: uint64[]) =
 
     new(capacity: int) =
